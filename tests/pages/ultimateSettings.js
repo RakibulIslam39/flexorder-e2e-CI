@@ -1,4 +1,5 @@
 const { expect } = require('@playwright/test');
+const { config } = require('../../config/environment');
 
 class OrderSyncSettingsPage {
     constructor(page) {
@@ -37,10 +38,14 @@ class OrderSyncSettingsPage {
     }
 
     async login(username, password) {
-        await this.page.goto(process.env.URL);
+        await this.page.goto(config.URL);
         await this.page.getByLabel('Username or Email Address').fill(username);
         await this.page.getByLabel('Password').fill(password);
         await this.page.getByRole('button', { name: 'Log In' }).click();
+    }
+
+    async navigateToPluginPage() {
+        await this.page.goto(config.URL);
     }
 
     async navigateToSettings() {

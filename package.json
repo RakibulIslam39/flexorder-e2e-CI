@@ -1,28 +1,113 @@
 {
-  "name": "osgs-automation",
+  "name": "flexorder-e2e-automation",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "playwright install && playwright test"
+    "test": "playwright install && playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:codegen": "playwright codegen",
+    "test:trace": "playwright show-trace",
+    "test:visual": "playwright test --grep @visual",
+    "test:accessibility": "playwright test --grep @accessibility",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:integration": "playwright test --grep @integration",
+    "test:performance": "playwright test --grep @performance",
+    "test:security": "playwright test --grep @security",
+    "build": "node scripts/build-plugin.js",
+    "build:plugin": "node scripts/build-plugin.js",
+    "build:free": "node scripts/build-plugin.js --free-only",
+    "build:pro": "node scripts/build-plugin.js --pro-only",
+    "generate:test-data": "node scripts/generate-test-data.js",
+    "test:ci:smoke": "cross-env CI=true playwright test --grep @smoke --project=smoke-chromium",
+    "test:ci:full": "cross-env CI=true playwright test --project=chromium",
+    "test:ci:parallel": "cross-env CI=true playwright test --project=chromium --workers=2",
+    "test:ci:cross-browser": "cross-env CI=true playwright test --project=chromium --project=firefox",
+    "test:run": "node scripts/run-tests.js",
+    "test:run:smoke": "node scripts/run-tests.js smoke",
+    "test:run:regression": "node scripts/run-tests.js regression",
+    "test:run:cross-browser": "node scripts/run-tests.js cross-browser",
+    "test:run:parallel": "node scripts/run-tests.js parallel",
+    "install:browsers": "playwright install",
+    "install:ci": "playwright install --with-deps",
+    "lint": "eslint . --ext .js,.ts",
+    "lint:fix": "eslint . --ext .js,.ts --fix",
+    "format": "prettier --write .",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky install",
+    "security-audit": "npm audit --audit-level=moderate",
+    "pre-commit": "npm run lint && npm run type-check && npm run format:check",
+    "setup:ci": "node scripts/setup-ci-environment.js",
+
+    "clean": "rm -rf test-results playwright-report node_modules/.cache",
+    "clean:all": "rm -rf test-results playwright-report node_modules/.cache .nyc_output coverage build-temp *.zip build-*.json wordpress-test-site .env.api-keys",
+    "validate": "npm run type-check && npm run lint && npm run format:check",
+    "setup:flexorder": "chmod +x main.sh && ./main.sh",
+    "setup:flexorder:ci": "cross-env CI=true chmod +x main.sh && ./main.sh",
+    "test:flexorder": "npm run setup:flexorder",
+    "test:flexorder:ci": "npm run setup:flexorder:ci"
   },
-  "keywords": [],
+  "keywords": [
+    "playwright",
+    "automation",
+    "woocommerce",
+    "google-sheets",
+    "testing",
+    "flexorder",
+    "e2e",
+    "wordpress",
+    "ci-cd",
+    "docker"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Comprehensive automation suite for FlexOrder plugin integration with WooCommerce and Google Sheets",
   "devDependencies": {
+    "@axe-core/playwright": "^4.9.0",
     "@faker-js/faker": "^9.9.0",
     "@playwright/test": "^1.50.1",
-    "@types/node": "^22.10.1"
+    "@types/node": "^22.10.1",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "cross-env": "^10.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^1.5.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
   },
   "dependencies": {
     "@woocommerce/woocommerce-rest-api": "^1.0.2",
-    "@wordpress/e2e-test-utils-playwright": "^1.1.0",
     "axios": "^1.7.9",
-    "chai": "^5.1.2",
     "dotenv": "^16.4.7",
     "google-spreadsheet": "^4.1.4",
     "googleapis": "^144.0.0",
-    "playwright": "^1.50.1",
-    "soft-assert": "^0.2.7"
-  }
+    "mysql2": "^3.9.2",
+    "playwright": "^1.50.1"
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/wppool/flexorder-e2e-automation.git"
+    },
+    "bugs": {
+        "url": "https://github.com/wppool/flexorder-e2e-automation/issues"
+    },
+    "homepage": "https://github.com/wppool/flexorder-e2e-automation#readme"
 }

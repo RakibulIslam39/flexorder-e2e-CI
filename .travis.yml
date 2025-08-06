@@ -1,0 +1,131 @@
+dist: xenial
+language: node_js
+node_js:
+  - 18
+os: linux
+branches:
+  only:
+    - main
+    - dev
+    - qa
+
+before_install:
+  - rm -rf ~/.gnupg
+  - sudo apt-get update
+  - sudo apt-get install -y xvfb mysql-client
+
+addons:
+  apt:
+    packages:
+      - mysql-client
+      - mysql-server
+      - nginx
+      - php7.4
+      - php7.4-mysql
+      - php7.4-curl
+      - php7.4-gd
+      - php7.4-mbstring
+      - php7.4-xml
+      - php7.4-zip
+      - unzip
+      - wget
+
+before_script:
+  # Set up environment variables
+  - export PLUGIN_DIR=$(pwd)
+  - export SITE_NAME="flexorder.local"
+  - export SITE_ROOT="/var/www/$SITE_NAME/htdocs"
+  - export SITE_URL="http://$SITE_NAME/"
+  
+  # Configure git
+  - sudo bash -c 'echo -e "[user]\n\tname = FlexOrder CI\n\temail = ci@flexorder.test" > /home/travis/.gitconfig'
+  
+  # Install WordPress CLI
+  - curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  - chmod +x wp-cli.phar
+  - sudo mv wp-cli.phar /usr/local/bin/wp
+  
+  # Set up MySQL
+  - sudo service mysql start
+  - mysql -e "CREATE DATABASE IF NOT EXISTS flexorder_test;"
+  - mysql -e "CREATE USER IF NOT EXISTS 'flexorder_user'@'localhost' IDENTIFIED BY 'flexorder_pass';"
+  - mysql -e "GRANT ALL PRIVILEGES ON flexorder_test.* TO 'flexorder_user'@'localhost';"
+  - mysql -e "FLUSH PRIVILEGES;"
+  
+  # Set up Nginx
+  - sudo service nginx start
+  - sudo rm -f /etc/nginx/sites-enabled/default
+  - sudo rm -f /etc/nginx/sites-available/default
+  
+  # Create WordPress site
+  - sudo mkdir -p $SITE_ROOT
+  - cd $SITE_ROOT
+  - wp core download --allow-root
+  - wp config create --dbname=flexorder_test --dbuser=flexorder_user --dbpass=flexorder_pass --dbhost=localhost --allow-root
+  - wp core install --url=$SITE_URL --title="FlexOrder Test Site" --admin_user=admin --admin_password=admin123 --admin_email=admin@flexorder.test --allow-root
+  
+  # Install WooCommerce
+  - wp plugin install woocommerce --activate --allow-root
+  
+  # Install FlexOrder plugin
+  - wp plugin install $PLUGIN_DIR/tests/utilities/order-sync-with-google-sheets-for-woocommerce.zip --activate --allow-root
+  
+  # Create test users
+  - wp user create test test@example.com --role=administrator --user_pass=1234 --allow-root
+  - wp user create test1 test1@example.com --role=administrator --user_pass=1234 --allow-root
+  
+  # Install theme
+  - wp theme install twentytwentyone --activate --allow-root
+  
+  # Generate test data
+  - wp wc product_cat create --name="Clothing" --description="Test clothing category" --allow-root
+  - wp wc product create --name="Test T-Shirt" --type=simple --regular_price=29.99 --category_ids=1 --allow-root
+  - wp wc product create --name="Test Jeans" --type=simple --regular_price=79.99 --category_ids=1 --allow-root
+  - wp wc order create --status=completed --allow-root
+  - wp wc order create --status=processing --allow-root
+  
+  # Configure Nginx for the site
+  - sudo tee /etc/nginx/sites-available/$SITE_NAME > /dev/null <<EOF
+server {
+    listen 80;
+    server_name $SITE_NAME;
+    root $SITE_ROOT;
+    index index.php index.html index.htm;
+    
+    location / {
+        try_files \$uri \$uri/ /index.php?\$args;
+    }
+    
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+    }
+}
+EOF
+  
+  - sudo ln -s /etc/nginx/sites-available/$SITE_NAME /etc/nginx/sites-enabled/
+  - echo "127.0.0.1 $SITE_NAME" | sudo tee -a /etc/hosts
+  - sudo service nginx reload
+  
+  # Return to plugin directory
+  - cd $PLUGIN_DIR
+  
+  # Install Node.js dependencies
+  - npm install
+  - npx playwright install --with-deps
+
+script:
+  # Run Playwright tests
+  - npx playwright test tests/testcase/ab_setup.spec.js
+  - npx playwright test tests/testcase/createNewOrder.spec.js
+
+after_script:
+  # Archive test results on failure
+  - |
+    if [ $TRAVIS_TEST_RESULT -ne 0 ]; then
+      echo "Tests failed, archiving results..."
+      tar -czf test-results.tar.gz test-results/ playwright-report/
+    fi
+
+notifications:
+  email: false 

@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-require('dotenv').config();
+const { config } = require('../config/environment.js');
 const WooCommerceRestApi = require("@woocommerce/woocommerce-rest-api").default;
 const updatedOrders = [];
 const orderStatuses = [
@@ -18,13 +18,13 @@ class OrderStatusUpdater {
         this.authConfigPath = authConfigPath;
         this.auth = new google.auth.GoogleAuth({
             keyFile: this.authConfigPath,
-            scopes: [process.env.GOOGLE_SHEET_SCOPES],
+            scopes: [config.GOOGLE_SHEET_SCOPES],
         });
         
         this.api = new WooCommerceRestApi({
-            url: process.env.SITE_URL,
-            consumerKey: process.env.WOOCOMMERCE_CONSUMER_KEY,
-            consumerSecret: process.env.WOOCOMMERCE_CONSUMER_SECRET,
+            url: config.SITE_URL,
+            consumerKey: config.WOOCOMMERCE_CONSUMER_KEY,
+            consumerSecret: config.WOOCOMMERCE_CONSUMER_SECRET,
             version: 'wc/v3'
         });
     }
@@ -39,7 +39,7 @@ class OrderStatusUpdater {
         const sheets = await this.initializeSheets();
         try {
             const response = await sheets.spreadsheets.values.get({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID,
+                spreadsheetId: config.GOOGLE_SHEET_ID,
                 range,
             });
             return response.data.values ? response.data.values[0] : null;
@@ -49,11 +49,11 @@ class OrderStatusUpdater {
         }
     }
 
-    async fetchOrders(range = process.env.SHEET_RANGE) {
+    async fetchOrders(range = config.SHEET_RANGE) {
         const sheets = await this.initializeSheets();
         try {
             const response = await sheets.spreadsheets.values.get({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID,
+                spreadsheetId: config.GOOGLE_SHEET_ID,
                 range,
             });
             return response.data.values || [];
@@ -70,12 +70,12 @@ class OrderStatusUpdater {
 
         const sheets = await this.initializeSheets();
         const range = rowIndex ? 
-            `${process.env.SHEET_NAME}!C${rowIndex}` : 
-            `${process.env.SHEET_NAME}!C2`;
+            `${config.SHEET_NAME}!C${rowIndex}` : 
+            `${config.SHEET_NAME}!C2`;
 
         try {
             await sheets.spreadsheets.values.update({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID,
+                spreadsheetId: config.GOOGLE_SHEET_ID,
                 range,
                 valueInputOption: 'USER_ENTERED',
                 resource: {
@@ -113,11 +113,11 @@ class OrderStatusUpdater {
         
         try {
             const spreadsheet = await sheets.spreadsheets.get({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID
+                spreadsheetId: config.GOOGLE_SHEET_ID
             });
             
             const targetSheet = spreadsheet.data.sheets.find(
-                sheet => sheet.properties.title === process.env.SHEET_NAME
+                sheet => sheet.properties.title === config.SHEET_NAME
             );
 
             if (!targetSheet) {
@@ -149,7 +149,7 @@ class OrderStatusUpdater {
             };
 
             const response = await sheets.spreadsheets.batchUpdate({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID,
+                spreadsheetId: config.GOOGLE_SHEET_ID,
                 resource: dataValidationRule
             });
 
@@ -166,11 +166,11 @@ class OrderStatusUpdater {
         
         try {
             const response = await sheets.spreadsheets.get({
-                spreadsheetId: process.env.GOOGLE_SHEET_ID
+                spreadsheetId: config.GOOGLE_SHEET_ID
             });
 
             const targetSheet = response.data.sheets.find(
-                sheet => sheet.properties.title === process.env.SHEET_NAME
+                sheet => sheet.properties.title === config.SHEET_NAME
             );
 
             if (!targetSheet) {
@@ -180,16 +180,16 @@ class OrderStatusUpdater {
             // Create an Apps Script trigger
             const script = {
                 function: 'onEdit',
-                deploymentId: process.env.APPS_SCRIPT_DEPLOYMENT_ID,
+                deploymentId: config.APPS_SCRIPT_DEPLOYMENT_ID,
                 triggerId: Date.now().toString()
             };
 
             const triggerResponse = await google.script('v1').projects.triggers.create({
-                scriptId: process.env.APPS_SCRIPT_PROJECT_ID,
+                scriptId: config.APPS_SCRIPT_PROJECT_ID,
                 resource: {
                     triggers: [{
                         eventType: 'onEdit',
-                        spreadsheetId: process.env.GOOGLE_SHEET_ID,
+                        spreadsheetId: config.GOOGLE_SHEET_ID,
                         sheetId: targetSheet.properties.sheetId,
                         ...script
                     }]

@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { OrderStatusUpdater, updatedOrders } = require('../../test-utils/updateOrderStatus');
+const { config } = require('../../config/environment');
 
 const orderStatuses = [
     "wc-pending",
@@ -18,12 +19,12 @@ test.describe('Google Sheets to WooCommerce Order Status Sync', () => {
     let orderId;
 
     test.beforeAll(() => {
-        statusUpdater = new OrderStatusUpdater('./tests/utilities/upload_key.json');
+        statusUpdater = new OrderStatusUpdater(config.SERVICE_ACCOUNT_UPLOAD_FILE);
     });
 
     test('should fetch and verify current order status', async () => {
        
-        const firstOrder = await statusUpdater.fetchFirstOrder('Orders!A2:Z2');
+        const firstOrder = await statusUpdater.fetchFirstOrder(`${config.SHEET_NAME}!A2:Z2`);
         expect.soft(firstOrder.length).toBeGreaterThan(2);
         [orderId, , originalStatus] = firstOrder;
         expect.soft(orderStatuses).toContain(originalStatus);
@@ -64,7 +65,7 @@ test.describe('Google Sheets to WooCommerce Order Status Sync', () => {
     test('should bulk update and verify status for first 10 orders', async () => {
         updatedOrders.length = 0;
         
-        const orders = await statusUpdater.fetchOrders('Orders!A2:C11');
+        const orders = await statusUpdater.fetchOrders(`${config.SHEET_NAME}!A2:C11`);
         expect(orders.length).toBeGreaterThan(0);
         
         const orderIds = orders.map(order => order[0]);

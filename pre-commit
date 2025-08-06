@@ -1,0 +1,101 @@
+#!/bin/bash
+# FlexOrder Plugin pre-commit hook
+
+set -e
+
+message="Checking staged changes..."
+git_status_egrep='^[MARC].+'
+
+for i; do
+	case "$i"
+	in
+		-m)
+			message="Checking any uncommitted changes..."
+			git_status_egrep='^.?[MARC].+'
+			shift;;
+	esac
+done
+
+echo $message
+
+# Check for staged JS/TS files
+IFS=$'\n' staged_js_files=( $(git status --porcelain | sed 's/[^ ]* -> *//g' | egrep $git_status_egrep'\.(js|ts)$' | cut -c4-) )
+if [ ${#staged_js_files[@]} != 0 ]; then
+	# ESLint
+	if [ -e .eslintrc.js ] || [ -e .eslintrc.json ]; then
+		echo "## eslint"
+		if command -v npx >/dev/null 2>&1; then
+			npx eslint "${staged_js_files[@]}"
+		else
+			echo "Skipping eslint since npx not available"
+		fi
+	fi
+
+	# TypeScript check
+	if [ -e tsconfig.json ]; then
+		echo "## typescript"
+		if command -v npx >/dev/null 2>&1; then
+			npx tsc --noEmit
+		else
+			echo "Skipping typescript check since npx not available"
+		fi
+	fi
+
+	# Prettier check
+	if [ -e .prettierrc ] || [ -e .prettierrc.json ]; then
+		echo "## prettier"
+		if command -v npx >/dev/null 2>&1; then
+			npx prettier --check "${staged_js_files[@]}"
+		else
+			echo "Skipping prettier since npx not available"
+		fi
+	fi
+fi
+
+# Check for staged PHP files
+IFS=$'\n' staged_php_files=( $(git status --porcelain | sed 's/[^ ]* -> *//g' | egrep $git_status_egrep'\.php$' | cut -c4-) )
+if [ ${#staged_php_files[@]} != 0 ]; then
+	# PHP Syntax Check
+	for php_file in "${staged_php_files[@]}"; do
+		php -lf $php_file
+	done
+
+	# PHP_CodeSniffer WordPress Coding Standards
+	echo "## phpcs"
+	if command -v phpcs >/dev/null 2>&1; then
+		phpcs_standard=WordPress
+		phpcs -p -s -v --ignore='tests/*' --standard=$phpcs_standard "${staged_php_files[@]}"
+	else
+		echo "Skipping phpcs since not installed"
+	fi
+fi
+
+# Check for staged test files
+IFS=$'\n' staged_test_files=( $(git status --porcelain | sed 's/[^ ]* -> *//g' | egrep $git_status_egrep'\.(spec\.js|test\.js)$' | cut -c4-) )
+if [ ${#staged_test_files[@]} != 0 ]; then
+	# Playwright test syntax check
+	echo "## playwright syntax check"
+	if command -v npx >/dev/null 2>&1; then
+		for test_file in "${staged_test_files[@]}"; do
+			npx playwright test --list "$test_file" >/dev/null 2>&1 || {
+				echo "❌ Syntax error in $test_file"
+				exit 1
+			}
+		done
+		echo "✅ All test files have valid syntax"
+	else
+		echo "Skipping playwright syntax check since npx not available"
+	fi
+fi
+
+# Check package.json for consistency
+if [ -e package.json ]; then
+	echo "## package.json validation"
+	if command -v npm >/dev/null 2>&1; then
+		npm run validate 2>/dev/null || echo "⚠️ Package validation failed, but continuing..."
+	else
+		echo "Skipping package validation since npm not available"
+	fi
+fi
+
+echo "✅ Pre-commit checks passed" 

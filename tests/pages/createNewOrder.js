@@ -1,12 +1,12 @@
 const { expect } = require('@playwright/test');
-require('dotenv').config();
+const { config } = require('../../config/environment');
 
 class CreateNewOrder {
   constructor(page) {
     this.page = page;
-    this.googleSheetUrl = process.env.GOOGLE_SHEET_URL;
-    this.googleAccountEmail = process.env.GOOGLE_ACCOUNT_EMAIL;
-    this.googleAccountPassword = process.env.GOOGLE_ACCOUNT_PASSWORD;
+    this.googleSheetUrl = config.GOOGLE_SHEET_URL;
+    this.googleAccountEmail = config.GOOGLE_ACCOUNT_EMAIL;
+    this.googleAccountPassword = config.GOOGLE_ACCOUNT_PASSWORD;
   }
 
   async navigateToGoogleSheet() {

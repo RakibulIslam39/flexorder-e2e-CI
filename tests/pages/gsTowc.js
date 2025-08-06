@@ -1,11 +1,12 @@
-const { test, expect } = require('@playwright/test');
+// const { test, expect } = require('@playwright/test');
 const { google } = require('googleapis');
+const { config } = require('../../config/environment');
 
 class GoogleSheetAPI {
     constructor(authConfigPath) {
         this.auth = new google.auth.GoogleAuth({
             keyFile: authConfigPath,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+            scopes: [config.GOOGLE_SHEET_SCOPES],
         });
     }
 

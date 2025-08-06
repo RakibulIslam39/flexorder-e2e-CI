@@ -1,85 +1,162 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import dotenv from 'dotenv';
+import { config, validateConfig } from './config/environment';
 
-// Load .env if present
-dotenv.config({ path: path.resolve(__dirname, 'tests/utilities/.env') });
-
-// Optionally load product data (uncomment if needed)
-/*
-let productData = {};
+// Validate environment configuration
 try {
-  productData = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'tests/utilities/productdata.json'), 'utf8'));
+  validateConfig();
 } catch (error) {
-  console.error('Error reading or parsing productdata.json:', error);
+  console.error('❌ Environment configuration validation failed:', error);
   process.exit(1);
 }
-*/
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 5 * 60 * 1000, // 5 minutes per test
+  timeout: config.TEST_TIMEOUT,
   expect: {
     timeout: 2 * 60 * 1000, // 2 minutes for expect()
   },
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 1,
+  fullyParallel: config.CI ? false : true, // Disable parallel in CI for stability
+  forbidOnly: !!config.CI,
+  retries: config.CI ? config.RETRY_ATTEMPTS : 0,
+  workers: config.CI ? config.PARALLEL_WORKERS : 1,
+  
+  // Global setup and teardown - temporarily disabled for debugging
+  // globalSetup: './tests/global-setup.ts',
+  // globalTeardown: './tests/global-teardown.ts',
+  
+  // Reporters
   reporter: [
-    ['html'],
+    ['html', { outputFolder: 'playwright-report' }],
     ['junit', { outputFile: 'test-results/e2e-junit-results.xml' }],
-  ],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['list'], // Console reporter
+    ...(config.CI ? [['github']] : []), // GitHub reporter for CI
+  ] as any,
+  
+  // Use configuration
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8000',
-    headless: true,
+    baseURL: config.PLAYWRIGHT_BASE_URL,
+    headless: config.HEADLESS,
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'on-first-retry',
-    testIdAttribute: 'autocomplete',
+    video: config.CI ? 'retain-on-failure' : 'off',
+    trace: config.CI ? 'on-first-retry' : 'off',
+    testIdAttribute: 'data-testid',
     actionTimeout: 0,
+    
+    // Viewport settings
+    viewport: { width: 1920, height: 1080 },
+    
+    // Browser settings
+    launchOptions: {
+      slowMo: config.SLOW_MO,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+      ],
+    },
+    
+    // Context settings
+    contextOptions: {
+      ignoreHTTPSErrors: true,
+      userAgent: 'FlexOrder-Automation/1.0',
+    },
   },
+  
+  // Projects for different browsers and test types
   projects: [
+    // Smoke tests - quick validation
+    {
+      name: 'smoke-chromium',
+      testMatch: /.*smoke.*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Chrome'],
+      },
+    },
+    
+    // Main test suite
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /.*(smoke|visual|accessibility).*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Chrome'],
+      },
     },
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-    // You can add/remove projects for mobile or branded browsers as needed
-    /*
+    
+    // Visual regression tests
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      name: 'visual-chromium',
+      testMatch: /.*visual.*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Chrome'],
+      },
     },
+    
+    // Accessibility tests
     {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      name: 'accessibility-chromium',
+      testMatch: /.*accessibility.*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Chrome'],
+      },
     },
+    
+    // Mobile testing
     {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
+      name: 'mobile-chrome',
+      testMatch: /.*mobile.*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Pixel 5'],
+      },
     },
+    
+    // Firefox for cross-browser testing (only in non-CI or specific CI runs)
     {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+      name: 'firefox',
+      testIgnore: /.*(smoke|visual|accessibility|mobile).*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          firefoxUserPrefs: {
+            'dom.webnotifications.enabled': false,
+            'media.navigator.enabled': false,
+          },
+        },
+      },
     },
-    */
+    
+    // Safari for cross-browser testing (only in non-CI or specific CI runs)
+    {
+      name: 'webkit',
+      testIgnore: /.*(smoke|visual|accessibility|mobile).*\.spec\.(js|ts)/,
+      use: { 
+        ...devices['Desktop Safari'],
+      },
+    },
   ],
-  // If you want to run a dev server before tests, uncomment and adjust below:
-  /*
-  webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+  
+  // Output directories
+  outputDir: 'test-results/',
+  
+  // Metadata
+  metadata: {
+    name: 'FlexOrder Plugin Automation',
+    version: '1.0.0',
+    description: 'Automated testing for FlexOrder plugin integration with WooCommerce and Google Sheets',
+    environment: {
+      woocommerce: config.SITE_URL,
+      google_sheets: config.GOOGLE_SHEET_URL,
+      ci_mode: config.CI,
+      test_timeout: config.TEST_TIMEOUT,
+      retry_attempts: config.RETRY_ATTEMPTS,
+    },
   },
-  */
 });

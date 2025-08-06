@@ -1,5 +1,4 @@
-# e2e test for FlexOrder plugin. 
-name: CI for FlexOrder plugin
+name: CI for FlexOrder Plugin
 
 # Controls when the workflow will run
 on:
@@ -13,41 +12,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  Run-wpe2e-TestCase:
-    # The type of runner that the job will run on
+  Run-e2e-TestCase:
     name: Run FlexOrder Features Test Cases
     runs-on: ubuntu-latest
     env: 
       TOKEN: ${{ secrets.GITHUB_TOKEN }}
       working-directory: ./
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out your repository under $GITHUB_WORKSPACE
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      # Check node version
+      # Check current directory and listings
       - name: Current directory and listings
         run: |
           pwd
           ls -al
 
-      # Install and config site using Docker (like rtMedia)
+      # Install and config site using Docker
       - name: Install and config site
         uses: docker://rtcamp/base-wo:v1.0.0
         env:
           NODE_VERSION: 18
           GITHUB_WORKSPACE: ${{ github.workspace }}
 
-      # Make setup script executable and run it (like rtMedia)
+      # Make setup script executable and run it
       - name: Setup WordPress and run tests
         run: |
-          chmod +x main.sh
-          ./main.sh
+          chmod +x scripts/setup-wordpress-site.sh
+          ./scripts/setup-wordpress-site.sh
 
-      # Archive HTML Report on failure (like rtMedia)
+      # Archive HTML Report on failure
       - name: Archive HTML Report on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -65,7 +62,7 @@ jobs:
             test-results/**/*.png
             *.png
 
-      # Cleanup (like rtMedia)
+      # Cleanup
       - name: Cleanup
         if: ${{ always() }}
-        uses: rtCamp/action-cleanup@master
+        uses: rtCamp/action-cleanup@master 

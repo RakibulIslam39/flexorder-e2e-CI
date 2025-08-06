@@ -2,21 +2,22 @@
 const WooCommerceRestApi = require("@woocommerce/woocommerce-rest-api").default;
 const { generateRandomOrderData } = require("../../test-utils/generateRandomOrderData");
 const { google } = require("googleapis");
+const { config } = require('../../config/environment');
 
 const ordersData = [];
 
 class CreateOrder {
     constructor(authConfigPath) {
         this.api = new WooCommerceRestApi({
-            url: process.env.SITE_URL,
-            consumerKey: process.env.WOOCOMMERCE_CONSUMER_KEY,
-            consumerSecret: process.env.WOOCOMMERCE_CONSUMER_SECRET,
+            url: config.SITE_URL,
+            consumerKey: config.WOOCOMMERCE_CONSUMER_KEY,
+            consumerSecret: config.WOOCOMMERCE_CONSUMER_SECRET,
             version: "wc/v3",
         });
 
         this.auth = new google.auth.GoogleAuth({
             keyFile: authConfigPath,
-            scopes: [process.env.GOOGLE_SHEET_SCOPES],
+            scopes: [config.GOOGLE_SHEET_SCOPES],
         });
     }
 
@@ -56,7 +57,7 @@ class CreateOrder {
     async getGoogleSheetData(range) {
         const sheets = google.sheets({ version: "v4", auth: this.auth });
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: process.env.GOOGLE_SHEET_ID,
+            spreadsheetId: config.GOOGLE_SHEET_ID,
             range,
         });
 
@@ -64,7 +65,7 @@ class CreateOrder {
     }
 
     async validateOrderOnGoogleSheet(orderId) {
-        const range = "Orders!A2:Z1000";
+        const range = `${config.SHEET_NAME}!A2:Z1000`;
         const rows = await this.getGoogleSheetData(range);
         console.log("Google Sheet data:", rows);
 

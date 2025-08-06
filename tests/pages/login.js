@@ -1,4 +1,5 @@
 const { expect } = require('@playwright/test');
+const { config } = require('../../config/environment');
 
 class LoginPage {
     constructor(page) {
@@ -10,12 +11,12 @@ class LoginPage {
     }
 
     async navigate() {
-        await this.page.goto(process.env.URL);
+        await this.page.goto(config.URL);
     }
 
     async login() {
-        await this.usernameField.fill(process.env.USER_NAME);
-        await this.passwordField.fill(process.env.PASSWORD);
+        await this.usernameField.fill(config.USER_NAME);
+        await this.passwordField.fill(config.PASSWORD);
         await this.loginButton.click();
 
         await this.dashboardButton.click();

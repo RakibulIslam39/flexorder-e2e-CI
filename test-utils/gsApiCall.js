@@ -1,10 +1,11 @@
 const { google } = require('googleapis');
+const { config } = require('../config/environment');
 
 class GoogleSheetAPI {
     constructor(authConfigPath) {
         this.auth = new google.auth.GoogleAuth({
             keyFile: authConfigPath,
-            scopes: [process.env.GOOGLE_SHEET_SCOPES],
+            scopes: [config.GOOGLE_SHEET_SCOPES],
         });
     }
 

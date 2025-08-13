@@ -326,29 +326,92 @@ function generateWooCommerceTestData() {
         runWPCommand('wc product_cat create --name="Clothing" --description="Test clothing category" --user=1');
         runWPCommand('wc product_cat create --name="Electronics" --description="Test electronics category" --user=1');
         runWPCommand('wc product_cat create --name="Books" --description="Test books category" --user=1');
+        runWPCommand('wc product_cat create --name="Home & Garden" --description="Test home and garden category" --user=1');
+        runWPCommand('wc product_cat create --name="Sports" --description="Test sports category" --user=1');
         
-        // Create simple products
-        console.log('Creating products...');
-        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --categories="[{\\"id\\":1}]" --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
-        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --categories="[{\\"id\\":2}]" --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
-        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --categories="[{\\"id\\":3}]" --description="Complete programming guide" --short_description="Learn to code" --user=1');
-        
-        // Create test customers
-        console.log('Creating test customers...');
-        runWPCommand('wc customer create --email=customer1@test.com --first_name=John --last_name=Doe --billing_first_name=John --billing_last_name=Doe --billing_email=customer1@test.com --billing_phone=555-0101 --billing_address_1="123 Main St" --billing_city="New York" --billing_state="NY" --billing_postcode="10001" --billing_country="US" --user=1');
-        runWPCommand('wc customer create --email=customer2@test.com --first_name=Jane --last_name=Smith --billing_first_name=Jane --billing_last_name=Smith --billing_email=customer2@test.com --billing_phone=555-0102 --billing_address_1="456 Oak Ave" --billing_city="Los Angeles" --billing_state="CA" --billing_postcode="90210" --billing_country="US" --user=1');
-        
-        // Create test orders
-        console.log('Creating test orders...');
-        for (let i = 1; i <= 10; i++) {
-            const statuses = ['completed', 'processing', 'pending', 'on-hold'];
-            const status = statuses[i % statuses.length];
-            const customerEmail = i % 2 === 0 ? 'customer1@test.com' : 'customer2@test.com';
+        // Create 20 products across different categories
+        console.log('Creating 20 products...');
+        const products = [
+            // Clothing (Category 1)
+            { name: "Premium Cotton T-Shirt", price: 29.99, sale_price: 24.99, category: 1, description: "Comfortable cotton t-shirt" },
+            { name: "Denim Jeans", price: 79.99, sale_price: 59.99, category: 1, description: "Classic blue denim jeans" },
+            { name: "Hooded Sweatshirt", price: 45.99, sale_price: 35.99, category: 1, description: "Warm hooded sweatshirt" },
+            { name: "Running Shoes", price: 89.99, sale_price: 69.99, category: 1, description: "Comfortable running shoes" },
             
-            runWPCommand(`wc order create --status="${status}" --customer_email="${customerEmail}" --line_items="[{\"product_id\":1,\"quantity\":1}]" --total="29.99" --user=1`);
+            // Electronics (Category 2)
+            { name: "Wireless Bluetooth Headphones", price: 89.99, sale_price: 69.99, category: 2, description: "High-quality wireless headphones" },
+            { name: "Smartphone Case", price: 19.99, sale_price: 14.99, category: 2, description: "Protective smartphone case" },
+            { name: "USB-C Cable", price: 12.99, sale_price: 9.99, category: 2, description: "Fast charging USB-C cable" },
+            { name: "Wireless Mouse", price: 34.99, sale_price: 24.99, category: 2, description: "Ergonomic wireless mouse" },
+            
+            // Books (Category 3)
+            { name: "Programming Guide Book", price: 39.99, sale_price: 29.99, category: 3, description: "Complete programming guide" },
+            { name: "Business Strategy Book", price: 24.99, sale_price: 19.99, category: 3, description: "Business strategy guide" },
+            { name: "Cookbook Collection", price: 49.99, sale_price: 39.99, category: 3, description: "Delicious recipes collection" },
+            { name: "Travel Guide", price: 19.99, sale_price: 14.99, category: 3, description: "Comprehensive travel guide" },
+            
+            // Home & Garden (Category 4)
+            { name: "Garden Tool Set", price: 59.99, sale_price: 44.99, category: 4, description: "Complete garden tool set" },
+            { name: "Kitchen Mixer", price: 129.99, sale_price: 99.99, category: 4, description: "Professional kitchen mixer" },
+            { name: "LED Desk Lamp", price: 34.99, sale_price: 24.99, category: 4, description: "Adjustable LED desk lamp" },
+            { name: "Plant Pot Set", price: 24.99, sale_price: 19.99, category: 4, description: "Decorative plant pot set" },
+            
+            // Sports (Category 5)
+            { name: "Yoga Mat", price: 29.99, sale_price: 19.99, category: 5, description: "Non-slip yoga mat" },
+            { name: "Dumbbell Set", price: 79.99, sale_price: 59.99, category: 5, description: "Adjustable dumbbell set" },
+            { name: "Basketball", price: 24.99, sale_price: 19.99, category: 5, description: "Official size basketball" },
+            { name: "Tennis Racket", price: 89.99, sale_price: 69.99, category: 5, description: "Professional tennis racket" }
+        ];
+        
+        for (let i = 0; i < products.length; i++) {
+            const product = products[i];
+            const salePriceParam = product.sale_price ? `--sale_price=${product.sale_price}` : '';
+            runWPCommand(`wc product create --name="${product.name}" --type=simple --regular_price=${product.price} ${salePriceParam} --categories="[{\\"id\\":${product.category}}]" --description="${product.description}" --short_description="${product.description}" --user=1`);
         }
         
-        console.log('✅ WooCommerce test data generated');
+        // Create test customers with correct parameters
+        console.log('Creating test customers...');
+        runWPCommand('wc customer create --email=customer1@test.com --first_name=John --last_name=Doe --user=1');
+        runWPCommand('wc customer create --email=customer2@test.com --first_name=Jane --last_name=Smith --user=1');
+        runWPCommand('wc customer create --email=customer3@test.com --first_name=Mike --last_name=Johnson --user=1');
+        runWPCommand('wc customer create --email=customer4@test.com --first_name=Sarah --last_name=Wilson --user=1');
+        runWPCommand('wc customer create --email=customer5@test.com --first_name=David --last_name=Brown --user=1');
+        
+        // Create 50 orders with various statuses and multiple products
+        console.log('Creating 50 orders with multiple products...');
+        const orderStatuses = ['completed', 'processing', 'pending', 'on-hold', 'cancelled', 'refunded'];
+        const customerEmails = ['customer1@test.com', 'customer2@test.com', 'customer3@test.com', 'customer4@test.com', 'customer5@test.com'];
+        
+        for (let i = 1; i <= 50; i++) {
+            const status = orderStatuses[i % orderStatuses.length];
+            const customerEmail = customerEmails[i % customerEmails.length];
+            
+            // Create orders with 1-4 products randomly
+            const numProducts = Math.floor(Math.random() * 4) + 1; // 1-4 products
+            const lineItems = [];
+            let total = 0;
+            
+            for (let j = 0; j < numProducts; j++) {
+                const productId = Math.floor(Math.random() * 20) + 1; // Products 1-20
+                const quantity = Math.floor(Math.random() * 3) + 1; // Quantity 1-3
+                const product = products[productId - 1];
+                const price = product.sale_price || product.price;
+                const itemTotal = price * quantity;
+                total += itemTotal;
+                
+                lineItems.push(`{"product_id":${productId},"quantity":${quantity}}`);
+            }
+            
+            const lineItemsJson = `[${lineItems.join(',')}]`;
+            const totalFormatted = total.toFixed(2);
+            
+            runWPCommand(`wc order create --status="${status}" --customer_email="${customerEmail}" --line_items='${lineItemsJson}' --total="${totalFormatted}" --user=1`);
+        }
+        
+        console.log('✅ WooCommerce test data generated successfully!');
+        console.log(`📦 Created ${products.length} products across 5 categories`);
+        console.log(`👥 Created ${customerEmails.length} test customers`);
+        console.log(`📋 Created 50 orders with various statuses and multiple products`);
         
     } catch (error) {
         console.error('❌ Error generating WooCommerce test data:', error.message);

@@ -410,7 +410,16 @@ function generateWooCommerceTestData() {
             
             // Create order using wp post create with WooCommerce order post type
             try {
-                const orderId = runWPCommand(`post create --post_type=shop_order --post_status=wc-${status} --post_title="Order #${i}" --user=1`);
+                const orderOutput = runWPCommand(`post create --post_type=shop_order --post_status=wc-${status} --post_title="Order #${i}" --user=1`);
+                
+                // Extract post ID from output (format: "Success: Created post X")
+                const orderIdMatch = orderOutput.match(/Success: Created post (\d+)/);
+                if (!orderIdMatch) {
+                    console.log(`⚠️ Could not extract order ID from output: ${orderOutput}`);
+                    continue;
+                }
+                
+                const orderId = orderIdMatch[1];
                 console.log(`Created order #${i} with ID: ${orderId}`);
                 
                 // Set order meta data

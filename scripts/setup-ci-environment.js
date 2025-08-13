@@ -141,54 +141,22 @@ function setupWordPress() {
         const wpInfo = runWPCommand('core version');
         console.log(`WordPress version: ${wpInfo}`);
         
-        // Check if WordPress is already configured by trying to get siteurl
-        let isConfigured = false;
+        // Check if WordPress is already configured
         try {
             const siteUrl = runWPCommand('option get siteurl');
             console.log(`WordPress site URL: ${siteUrl}`);
             
             if (siteUrl === SITE_URL) {
                 console.log('✅ WordPress is already configured');
-                isConfigured = true;
-            } else {
-                console.log('⚠️ WordPress configured but with different URL, will reinstall...');
+                return;
             }
         } catch (error) {
             console.log('WordPress not configured yet, proceeding with setup...');
         }
         
-        // If not configured, install WordPress
-        if (!isConfigured) {
-            console.log('📥 Installing WordPress...');
-            
-            // First, check if database tables exist
-            try {
-                runWPCommand('db check');
-                console.log('✅ Database tables exist');
-            } catch (dbError) {
-                console.log('📊 Creating database tables...');
-                runWPCommand(`core install --url="${SITE_URL}" --title="FlexOrder Test Site" --admin_user=${ADMIN_USER} --admin_password=${ADMIN_PASSWORD} --admin_email=${ADMIN_EMAIL} --skip-email`);
-                console.log('✅ Database tables created and WordPress installed');
-                return;
-            }
-            
-            // If tables exist but site is not configured, try to configure it
-            try {
-                runWPCommand(`core install --url="${SITE_URL}" --title="FlexOrder Test Site" --admin_user=${ADMIN_USER} --admin_password=${ADMIN_PASSWORD} --admin_email=${ADMIN_EMAIL} --skip-email`);
-                console.log('✅ WordPress configured successfully');
-            } catch (installError) {
-                console.log('⚠️ WordPress install failed, trying to update site URL...');
-                // Try to update the site URL if install fails
-                try {
-                    runWPCommand(`option update siteurl "${SITE_URL}"`);
-                    runWPCommand(`option update home "${SITE_URL}"`);
-                    console.log('✅ WordPress site URL updated');
-                } catch (updateError) {
-                    console.error('❌ Failed to configure WordPress:', updateError.message);
-                    throw updateError;
-                }
-            }
-        }
+        // Install WordPress if not already installed
+        console.log('📥 Installing WordPress...');
+        runWPCommand(`core install --url="${SITE_URL}" --title="FlexOrder Test Site" --admin_user=${ADMIN_USER} --admin_password=${ADMIN_PASSWORD} --admin_email=${ADMIN_EMAIL} --skip-email`);
         
         console.log('✅ WordPress setup completed');
         

@@ -388,9 +388,10 @@ function generateWooCommerceTestData() {
             
             // Create orders with 1-4 products randomly
             const numProducts = Math.floor(Math.random() * 4) + 1; // 1-4 products
-            const lineItems = [];
             let total = 0;
             
+            // Create line items for the order
+            const lineItems = [];
             for (let j = 0; j < numProducts; j++) {
                 const productId = Math.floor(Math.random() * 20) + 1; // Products 1-20
                 const quantity = Math.floor(Math.random() * 3) + 1; // Quantity 1-3
@@ -399,13 +400,42 @@ function generateWooCommerceTestData() {
                 const itemTotal = price * quantity;
                 total += itemTotal;
                 
-                lineItems.push(`{"product_id":${productId},"quantity":${quantity}}`);
+                lineItems.push({
+                    product_id: productId,
+                    quantity: quantity,
+                    total: itemTotal,
+                    subtotal: itemTotal
+                });
             }
             
-            const lineItemsJson = `[${lineItems.join(',')}]`;
-            const totalFormatted = total.toFixed(2);
-            
-            runWPCommand(`wc order create --status="${status}" --customer_email="${customerEmail}" --line_items='${lineItemsJson}' --total="${totalFormatted}" --user=1`);
+            // Create order using wp post create with WooCommerce order post type
+            try {
+                const orderId = runWPCommand(`post create --post_type=shop_order --post_status=wc-${status} --post_title="Order #${i}" --user=1`);
+                console.log(`Created order #${i} with ID: ${orderId}`);
+                
+                // Set order meta data
+                runWPCommand(`post meta update ${orderId} _customer_user 1`);
+                runWPCommand(`post meta update ${orderId} _billing_email "${customerEmail}"`);
+                runWPCommand(`post meta update ${orderId} _order_total ${total.toFixed(2)}`);
+                runWPCommand(`post meta update ${orderId} _order_currency USD`);
+                runWPCommand(`post meta update ${orderId} _payment_method bacs`);
+                runWPCommand(`post meta update ${orderId} _payment_method_title "Direct bank transfer"`);
+                
+                // Add line items to the order
+                for (let k = 0; k < lineItems.length; k++) {
+                    const item = lineItems[k];
+                    runWPCommand(`post meta update ${orderId} _line_items_${k}_product_id ${item.product_id}`);
+                    runWPCommand(`post meta update ${orderId} _line_items_${k}_qty ${item.quantity}`);
+                    runWPCommand(`post meta update ${orderId} _line_items_${k}_line_total ${item.total}`);
+                    runWPCommand(`post meta update ${orderId} _line_items_${k}_line_subtotal ${item.subtotal}`);
+                }
+                
+                // Set line items count
+                runWPCommand(`post meta update ${orderId} _line_items_count ${lineItems.length}`);
+                
+            } catch (error) {
+                console.log(`⚠️ Failed to create order #${i}, continuing...`);
+            }
         }
         
         console.log('✅ WooCommerce test data generated successfully!');

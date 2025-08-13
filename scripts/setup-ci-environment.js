@@ -167,7 +167,7 @@ function setupWordPress() {
                 console.log('✅ Database tables exist');
             } catch (dbError) {
                 console.log('📊 Creating database tables...');
-                runWPCommand('core install --url="${SITE_URL}" --title="FlexOrder Test Site" --admin_user=${ADMIN_USER} --admin_password=${ADMIN_PASSWORD} --admin_email=${ADMIN_EMAIL} --skip-email');
+                runWPCommand(`core install --url="${SITE_URL}" --title="FlexOrder Test Site" --admin_user=${ADMIN_USER} --admin_password=${ADMIN_PASSWORD} --admin_email=${ADMIN_EMAIL} --skip-email`);
                 console.log('✅ Database tables created and WordPress installed');
                 return;
             }

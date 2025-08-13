@@ -1,394 +1,279 @@
 
-# FlexOrder E2E Automation
+# 🚀 FlexOrder CI/CD Pipeline
 
-Comprehensive end-to-end testing automation suite for the FlexOrder plugin integration with WooCommerce and Google Sheets.
+A comprehensive automation suite for FlexOrder plugin integration with WooCommerce and Google Sheets, featuring end-to-end testing, automated builds, and continuous deployment.
 
-## 🚀 Quick Start
+## 📋 Quick Start
 
 ### Prerequisites
+- ✅ Docker Desktop (v20.10+)
+- ✅ Node.js (v18.0+)
+- ✅ Git (v2.30+)
+- ✅ GitHub Account
 
-- Node.js 18+ 
-- Docker and Docker Compose
-- Git
+### One-Click Setup
 
-### Installation
-
+**Windows:**
 ```bash
-# Clone the repository
-git clone <repository-url>
+setup.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+### Manual Setup
+```bash
+# Clone repository
+git clone https://github.com/wppool/flexorder-e2e-automation.git
 cd flexorder-e2e-automation
 
 # Install dependencies
 npm install
+npx playwright install --with-deps
 
-# Install Playwright browsers
-npm run install:browsers
+# Start environment
+docker-compose -f docker-compose.fresh-wordpress.yml up -d
 
-# Copy environment configuration
-cp tests/utilities/env.example tests/utilities/.env
+# Run setup
+chmod +x main.sh
+./main.sh
+
+# Build plugin
+npm run build:plugin
+
+# Run tests
+npm run test
 ```
 
-### Environment Setup
+## 🏗️ Architecture
 
-Edit `tests/utilities/.env` with your configuration:
+### Components
+- **WordPress Environment**: Docker-based WordPress with WooCommerce
+- **E2E Testing**: Playwright tests across multiple browsers
+- **CI/CD Pipeline**: GitHub Actions automation
+- **Plugin Building**: Automated plugin package creation
+- **Release Management**: Automated GitHub releases
 
-```bash
-# WordPress Configuration
-SITE_URL=https://your-test-site.com/
-URL=https://your-test-site.com/wp-login.php
-USER_NAME=your_admin_username
-PASSWORD=your_admin_password
-
-# Google Sheets Configuration
-GOOGLE_SHEET_ID=your_sheet_id
-GOOGLE_SHEET_URL=https://docs.google.com/spreadsheets/d/your_sheet_id
-GOOGLE_ACCOUNT_EMAIL=your_google_email
-GOOGLE_ACCOUNT_PASSWORD=your_google_password
-
-# Service Account
-SERVICE_ACCOUNT_UPLOAD_FILE=path/to/your/service-account.json
-```
-
-## 🧪 Testing Options
-
-### Option 1: Dedicated Test Site (Default)
-
-```bash
-# Run tests against dedicated site
-npm run test:ci:full
-
-# Run specific test
-npx playwright test --grep "Setup Add Credentials and Upload File Test"
-```
-
-### Option 2: Fresh WordPress Environment (CI/CD)
-
-```bash
-# Run complete FlexOrder setup and tests
-npm run test:flexorder:ci
-```
-
-## 🔄 CI/CD Workflow
-
-The project includes a comprehensive CI/CD workflow inspired by [rtMedia](https://github.com/rtCamp/rtMedia):
-
-### Features
-
-- ✅ **Fresh WordPress Environment** for each test run
-- ✅ **WooCommerce Installation** via CLI and API
-- ✅ **Test Data Generation** (products, orders, customers)
-- ✅ **REST API Key Generation** for testing
-- ✅ **Multi-browser Testing** (Chromium, Firefox, WebKit)
-- ✅ **Multi-branch Support** (dev, qa, main)
-- ✅ **Automated Releases** for main branch
-
-### Branch Strategy
-
-| Branch | Tests | Deploy | Purpose |
-|--------|-------|--------|---------|
-| `dev` | E2E Tests | ❌ | Development testing |
-| `qa` | E2E + Integration | ❌ | Quality assurance |
-| `main` | All Tests | ✅ | Production release |
-
-### Quick CI Setup
-
-```bash
-# Complete setup and testing
-npm run test:complete:ci
-
-# Individual setup steps
-npm run setup:fresh-wordpress:ci
-npm run setup:woocommerce:ci
-npm run setup:api-keys:ci
-npm run setup:test-data:ci
-```
+### Technology Stack
+- **Testing**: Playwright, TypeScript
+- **Containerization**: Docker, Docker Compose
+- **CI/CD**: GitHub Actions
+- **Database**: MySQL 8.0
+- **Web Server**: Apache with PHP 8.1
 
 ## 📁 Project Structure
 
 ```
 flexorder-e2e-automation/
-├── .github/workflows/          # GitHub Actions workflows
+├── .github/workflows/          # CI/CD pipelines
 ├── config/                     # Environment configuration
-├── docs/                       # Documentation
-├── scripts/                    # Setup and utility scripts
-├── tests/
-│   ├── pages/                  # Page Object Models
-│   ├── testcase/               # Test specifications
-│   ├── utilities/              # Test utilities and data
-│   └── utils/                  # Helper utilities
-├── docker-compose.fresh-wordpress.yml  # Docker environment
+├── scripts/                    # Build and setup scripts
+├── tests/                      # Test files and utilities
+├── docker-compose.fresh-wordpress.yml
+├── main.sh                     # Setup script
+├── setup.sh                    # Quick setup (Linux/Mac)
+├── setup.bat                   # Quick setup (Windows)
 └── package.json
 ```
 
-## 🛠️ Available Scripts
+## 🧪 Testing
 
-### Testing
+### Test Types
+- **Smoke Tests**: Basic functionality verification
+- **E2E Tests**: Full user journey testing
+- **Cross-Browser**: Chrome, Firefox, Safari
+- **API Tests**: WooCommerce REST API testing
 
+### Running Tests
 ```bash
-npm run test                    # Run all tests
-npm run test:headed            # Run tests with browser visible
-npm run test:debug             # Run tests in debug mode
-npm run test:ui                # Run tests with Playwright UI
-npm run test:smoke             # Run smoke tests only
-npm run test:regression        # Run regression tests only
-npm run test:integration       # Run integration tests
-npm run test:performance       # Run performance tests
-npm run test:security          # Run security tests
+# All tests
+npm run test
+
+# Smoke tests only
+npm run test:smoke
+
+# Specific browser
+npx playwright test --project=chromium
+
+# With UI
+npm run test:ui
+
+# Debug mode
+npm run test:debug
 ```
 
-### Setup
+## 🚀 CI/CD Pipeline
 
-```bash
-npm run setup:complete         # Complete environment setup
-npm run setup:fresh-wordpress  # Fresh WordPress setup
-npm run setup:woocommerce      # WooCommerce installation
-npm run setup:api-keys         # API key generation
-npm run setup:test-data        # Test data generation
-```
+### Workflow Jobs
+1. **Setup WordPress**: Environment preparation
+2. **E2E Tests**: Cross-browser testing
+3. **Build & Deploy**: Plugin building and release creation
+4. **Cleanup**: Resource cleanup
 
-### Docker
+### Triggers
+- Push to `main`, `dev`, `qa` branches
+- Pull requests to protected branches
+- Manual workflow dispatch
 
-```bash
-npm run docker:up              # Start Docker environment
-npm run docker:down            # Stop Docker environment
-npm run docker:clean           # Clean Docker environment
-npm run docker:logs            # View Docker logs
-npm run docker:restart         # Restart Docker environment
-```
-
-### Development
-
-```bash
-npm run lint                   # Run ESLint
-npm run lint:fix               # Fix ESLint issues
-npm run format                 # Format code with Prettier
-npm run type-check             # Run TypeScript type checking
-npm run build:plugin           # Build plugin package
-```
+### Artifacts
+- Plugin ZIP files (Free & Pro versions)
+- Test results and screenshots
+- Build reports
 
 ## 🔧 Configuration
 
 ### Environment Variables
+Copy `tests/utilities/env.example` to `tests/utilities/.env` and configure:
 
-```bash
-# WordPress Environment Mode
-USE_FRESH_WORDPRESS=false      # Use dedicated site (default)
-CI_FRESH_WORDPRESS=true        # Use fresh WordPress in CI
+```env
+# Site Configuration
+SITE_URL=http://localhost:8080/
+USER_NAME=admin
+PASSWORD=admin123
 
-# Fresh WordPress Configuration
-FRESH_SITE_URL=http://localhost:8080
-DB_HOST=localhost
-DB_NAME=flexorder_test
-DB_USER=flexorder_user
-DB_PASSWORD=flexorder_pass
+# Google Sheets Configuration
+GOOGLE_SHEET_ID=your_sheet_id
+GOOGLE_ACCOUNT_EMAIL=your_email@gmail.com
 
 # Test Configuration
-TEST_TIMEOUT=300000            # 5 minutes
-RETRY_ATTEMPTS=2
-PARALLEL_WORKERS=1
-HEADLESS=true                  # false for local development
-SLOW_MO=100                    # 0 for CI
+CI=false
+HEADLESS=false
+SLOW_MO=1000
 ```
 
-### Playwright Configuration
+### GitHub Secrets
+Set up in repository settings:
+- `FLEXORDER_PRO_LICENSE_KEY` (optional)
 
-The project uses Playwright with the following configuration:
+## 📊 Services
 
-- **Browsers**: Chromium, Firefox, WebKit
-- **Timeout**: 5 minutes (configurable)
-- **Retries**: 2 attempts
-- **Parallel**: Configurable workers
-- **Headless**: Enabled in CI, disabled locally
+### Local Development
+- **WordPress**: http://localhost:8080
+- **phpMyAdmin**: http://localhost:8081
+- **MailHog**: http://localhost:8025
 
-## 📊 Test Data
+### Default Credentials
+- **WordPress Admin**: admin / admin123
+- **MySQL**: flexorder_user / flexorder_pass
 
-The system generates comprehensive test data:
+## 🎯 Use Cases
 
-### Products
-- 5 Simple products (T-Shirt, Jeans, Sneakers, etc.)
-- 2 Variable products
-- 2 Downloadable products
-- 2 Draft/Private products
+### Development
+- Local testing environment
+- Automated test execution
+- Plugin development and testing
 
-### Orders
-- Processing, Completed, On-Hold, Cancelled, Refunded
+### Quality Assurance
+- Cross-browser compatibility testing
+- Automated regression testing
+- Performance monitoring
 
-### Customers
-- 8 test customers with different profiles
+### Production
+- Automated plugin builds
+- Release management
+- Deployment automation
 
-### Categories
-- Clothing, Footwear, Accessories, Digital, Electronics, Home & Garden
+## 📈 Benefits
 
-## 🔑 API Key Management
+### For Developers
+- ✅ Rapid environment setup
+- ✅ Automated testing
+- ✅ Cross-browser validation
+- ✅ Continuous integration
 
-- **Auto-generated** for each CI run
-- **Read/Write permissions** for testing
-- **Secure storage** in `.env.api-keys`
-- **Never committed** to version control
-- **Automatic cleanup** after tests
+### For QA Teams
+- ✅ Consistent test environments
+- ✅ Automated test execution
+- ✅ Detailed test reports
+- ✅ Regression testing
 
-## 🐳 Docker Environment
+### For Business
+- ✅ Reduced manual testing time
+- ✅ Higher code quality
+- ✅ Faster release cycles
+- ✅ Professional deployment process
 
-### Services
+## 🔍 Monitoring
 
-- **WordPress**: `http://localhost:8080`
-- **MySQL**: `localhost:3306`
-- **phpMyAdmin**: `http://localhost:8081`
-- **MailHog**: `http://localhost:8025`
+### Test Reports
+- HTML reports: `npm run test:report`
+- Screenshots on failure
+- Video recordings
+- Console logs
 
-### Quick Docker Commands
+### CI/CD Monitoring
+- GitHub Actions dashboard
+- Workflow execution logs
+- Build status tracking
+- Release history
 
-```bash
-# Start environment
-docker-compose -f docker-compose.fresh-wordpress.yml up -d
-
-# Check status
-docker-compose -f docker-compose.fresh-wordpress.yml ps
-
-# View logs
-docker-compose -f docker-compose.fresh-wordpress.yml logs -f wordpress
-
-# Stop and clean
-docker-compose -f docker-compose.fresh-wordpress.yml down -v
-```
-
-## 🚨 Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-#### WordPress Setup Fails
+#### Docker Issues
 ```bash
-# Check Docker containers
-npm run docker:logs
+# Clean up Docker
+docker system prune -a
+docker volume prune
 
-# Restart environment
-npm run docker:restart
+# Restart services
+docker-compose -f docker-compose.fresh-wordpress.yml down
+docker-compose -f docker-compose.fresh-wordpress.yml up -d
 ```
 
-#### WooCommerce Installation Fails
+#### Test Issues
 ```bash
-# Check WordPress accessibility
-curl http://localhost:8080
+# Clear cache
+npm run clean
 
-# Manual installation
-npm run setup:woocommerce
+# Reinstall browsers
+npx playwright install --with-deps
+
+# Debug mode
+npx playwright test --debug
 ```
 
-#### API Key Generation Fails
+#### WordPress Issues
 ```bash
-# Check WooCommerce status
-docker exec flexorder-wordpress wp plugin status woocommerce
-
-# Regenerate keys
-npm run setup:api-keys
+# Reset WordPress
+docker exec -it flexorder-wordpress wp db reset --yes --allow-root
 ```
 
-#### Test Data Generation Fails
-```bash
-# Validate test data
-node scripts/setup-test-data.js --validate
-
-# Regenerate data
-npm run setup:test-data
-```
-
-### Debug Mode
-
-```bash
-# Run tests in debug mode
-npm run test:debug
-
-# Run with UI
-npm run test:ui
-
-# Run with trace
-npx playwright test --trace on
-```
-
-## 📈 Performance
-
-### Optimization Features
-
-- **Parallel execution** across browsers
-- **Caching** of Node modules and browsers
-- **Resource management** with automatic cleanup
-- **Isolated environments** for each test run
-
-### Performance Metrics
-
-- Test execution time tracking
-- Resource usage monitoring
-- Performance regression detection
-- Build time optimization
-
-## 🔒 Security
-
-### Security Features
-
-- **Isolated test environments**
-- **Secure API key management**
-- **No real data in tests**
-- **Automatic cleanup**
-- **Environment isolation**
-
-### Best Practices
-
-- Never commit `.env` files
-- Use fresh environments for each test
-- Generate API keys per test run
-- Clean up resources after tests
+### Getting Help
+- 📖 [Complete Setup Guide](FLEXORDER_SETUP_GUIDE.md)
+- 🔧 [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md)
+- 🐛 [Create GitHub Issue](https://github.com/wppool/flexorder-e2e-automation/issues)
+- 💬 [GitHub Discussions](https://github.com/wppool/flexorder-e2e-automation/discussions)
 
 ## 📚 Documentation
 
-- [WordPress Environment Setup](docs/wordpress-environment-setup.md)
-- [CI/CD Workflow Implementation](docs/ci-workflow-implementation.md)
-- [Testing Best Practices](docs/testing-best-practices.md)
-- [Troubleshooting Guide](docs/troubleshooting.md)
+- [📋 Complete Setup Guide](FLEXORDER_SETUP_GUIDE.md) - Detailed setup instructions
+- [🚀 GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md) - CI/CD configuration
+- [🔧 Plugin Build Guide](PLUGIN_BUILD_GUIDE.md) - Plugin development
+- [🧪 Test Data Guide](TEST_DATA_GUIDE.md) - Test data management
+- [🔐 Security Guide](SECURITY.md) - Security best practices
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Workflow
-
-```bash
-# Setup development environment
-npm run setup:complete
-
-# Run tests
-npm run test
-
-# Check code quality
-npm run lint
-npm run type-check
-
-# Format code
-npm run format
-```
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `npm run test`
+5. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC License.
 
-## 🙏 Acknowledgments
+## 🏢 About
 
-- Inspired by [rtMedia's CI/CD approach](https://github.com/rtCamp/rtMedia)
-- Built with [Playwright](https://playwright.dev/)
-- Powered by [WordPress](https://wordpress.org/) and [WooCommerce](https://woocommerce.com/)
-
-## 📞 Support
-
-For support and questions:
-
-- Create an issue in the repository
-- Check the [documentation](docs/)
-- Review the [troubleshooting guide](docs/troubleshooting.md)
+FlexOrder is a WordPress plugin that synchronizes WooCommerce orders with Google Sheets, providing seamless order management and data synchronization capabilities.
 
 ---
 
-**Happy Testing! 🎉**
+**🎯 Ready to automate your FlexOrder development workflow? Start with the [Complete Setup Guide](FLEXORDER_SETUP_GUIDE.md)!**
 

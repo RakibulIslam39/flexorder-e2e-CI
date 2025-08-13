@@ -31,32 +31,7 @@ function start_services() {
     fi
 }
 
-# Build FlexOrder plugin from main branch code
-function build_plugin() {
-    echo "Building FlexOrder plugin from main branch code"
-    cd $GITHUB_WORKSPACE
-    
-    # Create build directory
-    mkdir -p build
-    
-    # Build the plugin (assuming there's a build process)
-    if [ -f "package.json" ] && grep -q "build" package.json; then
-        echo "Running npm build process"
-        npm run build
-    fi
-    
-    # Create plugin zip file
-    echo "Creating plugin zip file"
-    if [ -d "src" ]; then
-        # If there's a src directory, zip it
-        zip -r "build/$PLUGIN_NAME.zip" src/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*"
-    else
-        # Zip the entire plugin directory
-        zip -r "build/$PLUGIN_NAME.zip" . -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*" "*.git*" "build/*"
-    fi
-    
-    echo "Plugin built successfully: build/$PLUGIN_NAME.zip"
-}
+
 
 # Create, setup and populate FlexOrder plugin with data
 function create_and_configure_site() {
@@ -414,7 +389,6 @@ function run_playwright_tests() {
 # Main function (like rtMedia)
 function main() {
     start_services
-    build_plugin
     create_and_configure_site
     install_playwright_package
     install_playwright

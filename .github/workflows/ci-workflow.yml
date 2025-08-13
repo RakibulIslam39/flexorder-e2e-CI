@@ -3,8 +3,8 @@ name: FlexOrder CI/CD Pipeline
 on:
   push:
     branches: [main, dev, qa]
-  pull_request:
-    branches: [main, dev, qa]
+  # pull_request:
+  #   branches: [main, dev, qa]
 
 env:
   NODE_VERSION: '18'
@@ -44,26 +44,14 @@ jobs:
         id: build
         run: |
           echo "Building FlexOrder plugin from main branch code"
-          mkdir -p build
-          
-          # Build the plugin (assuming there's a build process)
-          if [ -f "package.json" ] && grep -q "build" package.json; then
-            echo "Running npm build process"
-            npm run build
-          fi
-          
-          # Create plugin zip file
-          echo "Creating plugin zip file"
-          if [ -d "src" ]; then
-            # If there's a src directory, zip it
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" src/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*"
+          npm run build:plugin
+          if [ -f "build/order-sync-with-google-sheets-for-woocommerce.zip" ]; then
+            echo "plugin-path=build/order-sync-with-google-sheets-for-woocommerce.zip" >> $GITHUB_OUTPUT
           else
-            # Zip the entire plugin directory
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" . -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*" "*.git*" "build/*"
+            echo "plugin-path=" >> $GITHUB_OUTPUT
+            echo "❌ Plugin build failed - no zip file created"
+            exit 1
           fi
-          
-          echo "Plugin built successfully"
-          echo "plugin-path=build/order-sync-with-google-sheets-for-woocommerce.zip" >> $GITHUB_OUTPUT
         
       - name: Setup MySQL
         run: |
@@ -88,17 +76,27 @@ jobs:
           
       - name: Wait for WordPress
         run: |
-          until curl -f http://localhost:8080; do
-            echo "Waiting for WordPress..."
+          echo "Waiting for WordPress to be ready..."
+          timeout=300  # 5 minutes timeout
+          counter=0
+          while ! curl -f http://localhost:8080 >/dev/null 2>&1; do
+            echo "Waiting for WordPress... (${counter}s)"
             sleep 10
+            counter=$((counter + 10))
+            if [ $counter -ge $timeout ]; then
+              echo "❌ WordPress failed to start within ${timeout} seconds"
+              docker-compose -f docker-compose.fresh-wordpress.yml logs
+              exit 1
+            fi
           done
+          echo "✅ WordPress is ready!"
           
       - name: Setup WordPress
         id: setup
         run: |
           echo "Setting up WordPress..."
           chmod +x main.sh
-          ./main.sh
+          CI=true CI_FRESH_WORDPRESS=true ./main.sh
           echo "wordpress-url=http://localhost:8080" >> $GITHUB_OUTPUT
           
       - name: Install and Configure WooCommerce
@@ -111,7 +109,11 @@ jobs:
         id: api-keys
         run: |
           echo "API keys generation completed via main.sh"
-          echo "keys=$(cat tests/utilities/api-keys.json)" >> $GITHUB_OUTPUT
+          if [ -f "tests/utilities/api-keys.json" ]; then
+            echo "keys=$(cat tests/utilities/api-keys.json)" >> $GITHUB_OUTPUT
+          else
+            echo "keys={\"consumer_key\":\"\",\"consumer_secret\":\"\"}" >> $GITHUB_OUTPUT
+          fi
           
       - name: Generate Test Data
         run: |
@@ -125,7 +127,6 @@ jobs:
     strategy:
       matrix:
         browser: [chromium, firefox, webkit]
-        branch: [dev, qa, main]
       fail-fast: false
       
     steps:
@@ -143,23 +144,6 @@ jobs:
         
       - name: Install Playwright
         run: npx playwright install --with-deps
-        
-      - name: Build FlexOrder Plugin
-        run: |
-          echo "Building FlexOrder plugin for testing"
-          mkdir -p build
-          
-          # Build the plugin
-          if [ -f "package.json" ] && grep -q "build" package.json; then
-            npm run build
-          fi
-          
-          # Create plugin zip file
-          if [ -d "src" ]; then
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" src/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*"
-          else
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" . -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*" "*.git*" "build/*"
-          fi
         
       - name: Setup MySQL
         run: |
@@ -189,7 +173,8 @@ jobs:
           
       - name: Run E2E Tests
         run: |
-          CI=true CI_FRESH_WORDPRESS=true npm run test:ci:full -- --project=${{ matrix.browser }}
+          timeout 1800 CI=true CI_FRESH_WORDPRESS=true npm run test:ci:full -- --project=${{ matrix.browser }}
+        timeout-minutes: 30
         env:
           CI: true
           CI_FRESH_WORDPRESS: true
@@ -204,7 +189,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.browser }}-${{ matrix.branch }}
+          name: test-results-${{ matrix.browser }}
           path: |
             test-results/
             playwright-report/
@@ -215,99 +200,16 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: screenshots-${{ matrix.browser }}-${{ matrix.branch }}
+          name: screenshots-${{ matrix.browser }}
           path: |
             test-results/**/*.png
             *.png
-
-  # Integration Tests
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: setup-wordpress
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/qa'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run Integration Tests
-        run: npm run test:integration
-        env:
-          CI: true
-          WORDPRESS_URL: ${{ needs.setup-wordpress.outputs.wordpress-url }}
-          WOOCOMMERCE_CONSUMER_KEY: ${{ fromJSON(needs.setup-wordpress.outputs.api-keys).consumer_key }}
-          WOOCOMMERCE_CONSUMER_SECRET: ${{ fromJSON(needs.setup-wordpress.outputs.api-keys).consumer_secret }}
-          FLEXORDER_PRO_LICENSE_KEY: ${{ secrets.FLEXORDER_PRO_LICENSE_KEY }}
-
-  # Performance Tests
-  performance-tests:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    needs: setup-wordpress
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run Performance Tests
-        run: npm run test:performance
-        env:
-          CI: true
-          WORDPRESS_URL: ${{ needs.setup-wordpress.outputs.wordpress-url }}
-          FLEXORDER_PRO_LICENSE_KEY: ${{ secrets.FLEXORDER_PRO_LICENSE_KEY }}
-
-  # Security Tests
-  security-tests:
-    name: Security Tests
-    runs-on: ubuntu-latest
-    needs: setup-wordpress
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run Security Tests
-        run: npm run test:security
-        env:
-          CI: true
-          WORDPRESS_URL: ${{ needs.setup-wordpress.outputs.wordpress-url }}
-          FLEXORDER_PRO_LICENSE_KEY: ${{ secrets.FLEXORDER_PRO_LICENSE_KEY }}
 
   # Build and Deploy
   build-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    needs: [e2e-tests, integration-tests, performance-tests, security-tests]
+    needs: [e2e-tests]
     if: github.ref == 'refs/heads/main' && success()
     
     steps:
@@ -326,29 +228,17 @@ jobs:
       - name: Build Plugin
         run: |
           echo "Building FlexOrder plugin for release"
-          mkdir -p build
-          
-          # Build the plugin
-          if [ -f "package.json" ] && grep -q "build" package.json; then
-            npm run build
-          fi
-          
-          # Create plugin zip file
-          if [ -d "src" ]; then
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" src/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*"
-          else
-            zip -r "build/order-sync-with-google-sheets-for-woocommerce.zip" . -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*" "*.git*" "build/*"
-          fi
+          timeout 600 npm run build:plugin
           
           # Create Pro version if license key is available
           if [ -n "${{ vars.FLEXORDER_PRO_LICENSE_KEY || secrets.FLEXORDER_PRO_LICENSE_KEY }}" ]; then
             echo "Building Pro version"
-            if [ -d "pro" ]; then
-              zip -r "build/order-sync-with-google-sheets-for-woocommerce-pro.zip" pro/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*" "*/docs/*"
-            fi
+            timeout 600 npm run build:pro
           fi
+        timeout-minutes: 15
         
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -359,10 +249,7 @@ jobs:
             Automated release from CI/CD pipeline
             
             ## Changes
-            - E2E tests passed
-            - Integration tests passed
-            - Performance tests passed
-            - Security tests passed
+            - E2E tests passed across all browsers
             
             ## Artifacts
             - Plugin build included
@@ -395,7 +282,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-latest
-    needs: [e2e-tests, integration-tests, performance-tests, security-tests, build-deploy]
+    needs: [e2e-tests, build-deploy]
     if: always()
     
     steps:

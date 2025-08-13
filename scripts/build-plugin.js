@@ -162,6 +162,11 @@ function generateApiKeys() {
 function main() {
     log('🚀 Starting FlexOrder Plugin Build Process', 'info');
     
+    // Parse command line arguments
+    const args = process.argv.slice(2);
+    const buildFreeOnly = args.includes('--free-only');
+    const buildProOnly = args.includes('--pro-only');
+    
     // Ensure build directory exists
     ensureDirectoryExists(config.buildDir);
     
@@ -169,21 +174,34 @@ function main() {
     runNpmBuild();
     
     // Build Free version
-    const freeBuilt = buildPlugin(
-        config.srcDir,
-        `${config.pluginName}.zip`,
-        'Free Version'
-    );
+    let freeBuilt = false;
+    if (!buildProOnly) {
+        if (fs.existsSync(config.srcDir)) {
+            freeBuilt = buildPlugin(
+                config.srcDir,
+                `${config.pluginName}.zip`,
+                'Free Version'
+            );
+        } else {
+            log('Source directory not found, building from current directory', 'warning');
+            // Build from current directory if src doesn't exist
+            freeBuilt = buildPlugin(
+                '.',
+                `${config.pluginName}.zip`,
+                'Free Version'
+            );
+        }
+    }
     
     // Build Pro version if directory exists
     let proBuilt = false;
-    if (fs.existsSync(config.proDir)) {
+    if (!buildFreeOnly && fs.existsSync(config.proDir)) {
         proBuilt = buildPlugin(
             config.proDir,
             `${config.pluginName}-pro.zip`,
             'Pro Version'
         );
-    } else {
+    } else if (!buildFreeOnly) {
         log('Pro version directory not found, skipping Pro build', 'warning');
     }
     

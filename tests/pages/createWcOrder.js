@@ -35,18 +35,30 @@ class CreateOrder {
     async createOrder() {
         const product = await this.getRandomProduct();
         const orderData = generateRandomOrderData(product);
-
+    
         console.log("Creating order with:", orderData);
         try {
             const response = await this.api.post("orders", orderData);
             const createdOrder = response.data;
-
+    
             ordersData.push({
                 id: createdOrder.id,
-                sku: product.sku,
+                product_names: createdOrder.line_items.map(item => item.name).join(', '),
+                status: createdOrder.status,
+                total_items: createdOrder.line_items.reduce((sum, item) => sum + item.quantity, 0),
+                sku: product.sku || "** No SKU Found **",
+                total_price: createdOrder.total,
+                total_discount: createdOrder.discount_total,
                 billing: createdOrder.billing,
+                shipping: createdOrder.shipping,
+                order_date: createdOrder.date_created,
+                payment_method: createdOrder.payment_method,
+                customer_note: createdOrder.customer_note || '',
+                order_placed_by: 'API',
+                order_url: `${config.SITE_URL}/wp-admin/post.php?post=${createdOrder.id}&action=edit`,
+                order_note: ''
             });
-
+    
             return createdOrder;
         } catch (error) {
             console.error("Error creating order:", error.response?.data || error.message);

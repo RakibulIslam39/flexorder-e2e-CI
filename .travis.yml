@@ -116,6 +116,7 @@ EOF
 
 script:
   # Run Playwright tests
+  - npx playwright test
   - npx playwright test tests/testcase/ab_setup.spec.js
   - npx playwright test tests/testcase/createNewOrder.spec.js
 

@@ -231,7 +231,7 @@ jobs:
           timeout 600 npm run build:plugin
           
           # Create Pro version if license key is available
-          if [ -n "${{ vars.FLEXORDER_PRO_LICENSE_KEY || secrets.FLEXORDER_PRO_LICENSE_KEY }}" ]; then
+          if [ -n "${{ secrets.FLEXORDER_PRO_LICENSE_KEY }}" ]; then
             echo "Building Pro version"
             timeout 600 npm run build:pro
           fi

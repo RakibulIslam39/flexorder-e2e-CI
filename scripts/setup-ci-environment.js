@@ -16,6 +16,61 @@ const DB_HOST = '127.0.0.1';
 
 console.log('🚀 Setting up FlexOrder CI Environment...');
 
+// Function to install WP-CLI in the WordPress container
+function installWPCLI() {
+    console.log('📦 Installing WP-CLI in WordPress container...');
+    try {
+        // Check if WP-CLI is already installed
+        try {
+            execSync('docker exec flexorder-wordpress wp --version', {
+                stdio: 'pipe'
+            });
+            console.log('✅ WP-CLI is already installed');
+            return;
+        } catch (error) {
+            console.log('WP-CLI not found, installing...');
+        }
+        
+        // Install curl if not available
+        try {
+            execSync('docker exec flexorder-wordpress apt-get update', {
+                stdio: 'pipe'
+            });
+            execSync('docker exec flexorder-wordpress apt-get install -y curl', {
+                stdio: 'pipe'
+            });
+        } catch (error) {
+            console.log('curl might already be available, continuing...');
+        }
+        
+        // Download and install WP-CLI
+        execSync('docker exec flexorder-wordpress curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar', {
+            stdio: 'pipe'
+        });
+        
+        // Make it executable
+        execSync('docker exec flexorder-wordpress chmod +x wp-cli.phar', {
+            stdio: 'pipe'
+        });
+        
+        // Move to /usr/local/bin and create wp alias
+        execSync('docker exec flexorder-wordpress mv wp-cli.phar /usr/local/bin/wp', {
+            stdio: 'pipe'
+        });
+        
+        // Verify installation
+        const version = execSync('docker exec flexorder-wordpress wp --version', {
+            encoding: 'utf8',
+            stdio: 'pipe'
+        });
+        
+        console.log(`✅ WP-CLI installed successfully: ${version.trim()}`);
+    } catch (error) {
+        console.error('❌ Error installing WP-CLI:', error.message);
+        throw error;
+    }
+}
+
 // Function to run WP-CLI commands
 function runWPCommand(command) {
     try {
@@ -290,6 +345,9 @@ async function main() {
         // Wait for services to be ready
         waitForMySQL();
         waitForWordPress();
+        
+        // Install WP-CLI
+        installWPCLI();
         
         // Setup WordPress
         setupWordPress();

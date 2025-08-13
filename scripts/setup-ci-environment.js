@@ -277,9 +277,9 @@ function generateWooCommerceTestData() {
         
         // Create simple products
         console.log('Creating products...');
-        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --category_ids=1 --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
-        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --category_ids=2 --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
-        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --category_ids=3 --description="Complete programming guide" --short_description="Learn to code" --user=1');
+        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --categories=1 --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
+        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --categories=2 --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
+        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --categories=3 --description="Complete programming guide" --short_description="Learn to code" --user=1');
         
         // Create test customers
         console.log('Creating test customers...');

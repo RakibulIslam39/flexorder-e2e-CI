@@ -114,7 +114,9 @@ jobs:
         run: |
           echo "API keys generation completed via setup script"
           if [ -f "tests/utilities/api-keys.json" ]; then
-            echo "keys=$(cat tests/utilities/api-keys.json)" >> $GITHUB_OUTPUT
+            # Read the JSON file and escape it properly for GitHub Actions
+            keys_content=$(cat tests/utilities/api-keys.json | jq -c .)
+            echo "keys=$keys_content" >> $GITHUB_OUTPUT
           else
             echo "keys={\"consumer_key\":\"\",\"consumer_secret\":\"\"}" >> $GITHUB_OUTPUT
           fi

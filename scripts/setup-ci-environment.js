@@ -22,7 +22,7 @@ function installWPCLI() {
     try {
         // Check if WP-CLI is already installed
         try {
-            execSync('docker exec flexorder-wordpress wp --version', {
+            execSync('docker exec flexorder-wordpress wp --version --allow-root', {
                 stdio: 'pipe'
             });
             console.log('✅ WP-CLI is already installed');
@@ -59,7 +59,7 @@ function installWPCLI() {
         });
         
         // Verify installation
-        const version = execSync('docker exec flexorder-wordpress wp --version', {
+        const version = execSync('docker exec flexorder-wordpress wp --version --allow-root', {
             encoding: 'utf8',
             stdio: 'pipe'
         });

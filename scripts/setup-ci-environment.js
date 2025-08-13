@@ -178,21 +178,60 @@ function setupWooCommerce() {
         } catch (error) {
             console.log('Installing WooCommerce...');
             
-            // Try to install WooCommerce with force flag to bypass version checks
+            // Try multiple installation methods
+            let installed = false;
+            
+            // Method 1: Install from WordPress.org repository
             try {
-                runWPCommand('plugin install woocommerce --activate --force');
+                console.log('Trying to install WooCommerce from WordPress.org...');
+                runWPCommand('plugin install woocommerce --activate');
+                installed = true;
             } catch (installError) {
-                console.log('Standard installation failed, trying alternative approach...');
+                console.log('WordPress.org installation failed, trying with force flag...');
                 
-                // Try installing a specific version that's compatible
+                // Method 2: Install with force flag
                 try {
-                    runWPCommand('plugin install woocommerce --version=8.5.0 --activate');
-                } catch (versionError) {
-                    console.log('Version-specific installation failed, trying latest compatible version...');
+                    runWPCommand('plugin install woocommerce --activate --force');
+                    installed = true;
+                } catch (forceError) {
+                    console.log('Force installation failed, trying specific version...');
                     
-                    // Try installing from WordPress.org with force
-                    runWPCommand('plugin install https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip --activate --force');
+                    // Method 3: Install specific version
+                    try {
+                        runWPCommand('plugin install woocommerce --version=8.5.0 --activate');
+                        installed = true;
+                    } catch (versionError) {
+                        console.log('Version-specific installation failed, trying direct download...');
+                        
+                        // Method 4: Direct download from WordPress.org
+                        try {
+                            runWPCommand('plugin install https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip --activate --force');
+                            installed = true;
+                        } catch (downloadError) {
+                            console.log('Direct download failed, trying alternative URL...');
+                            
+                            // Method 5: Alternative download URL
+                            try {
+                                runWPCommand('plugin install https://downloads.wordpress.org/plugin/woocommerce.8.5.0.zip --activate');
+                                installed = true;
+                            } catch (altError) {
+                                throw new Error('All WooCommerce installation methods failed');
+                            }
+                        }
+                    }
                 }
+            }
+            
+            if (!installed) {
+                throw new Error('Failed to install WooCommerce after trying all methods');
+            }
+            
+            // Verify installation
+            try {
+                const wcVersion = runWPCommand('plugin get woocommerce --field=version');
+                console.log(`✅ WooCommerce installed successfully: ${wcVersion}`);
+            } catch (verifyError) {
+                throw new Error('WooCommerce installation verification failed');
             }
         }
         
@@ -201,6 +240,19 @@ function setupWooCommerce() {
         runWPCommand('option update woocommerce_currency USD');
         runWPCommand('option update woocommerce_weight_unit lbs');
         runWPCommand('option update woocommerce_dimension_unit in');
+        
+        // Verify WooCommerce is properly activated
+        try {
+            const isActive = runWPCommand('plugin is-active woocommerce');
+            if (isActive === 'yes') {
+                console.log('✅ WooCommerce is active and configured');
+            } else {
+                console.log('⚠️ WooCommerce is installed but not active, activating...');
+                runWPCommand('plugin activate woocommerce');
+            }
+        } catch (error) {
+            console.log('⚠️ Could not verify WooCommerce activation status');
+        }
         
         console.log('✅ WooCommerce setup completed');
         
@@ -277,9 +329,9 @@ function generateWooCommerceTestData() {
         
         // Create simple products
         console.log('Creating products...');
-        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --categories=1 --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
-        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --categories=2 --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
-        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --categories=3 --description="Complete programming guide" --short_description="Learn to code" --user=1');
+        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --categories="[{\\"id\\":1}]" --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
+        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --categories="[{\\"id\\":2}]" --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
+        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --categories="[{\\"id\\":3}]" --description="Complete programming guide" --short_description="Learn to code" --user=1');
         
         // Create test customers
         console.log('Creating test customers...');
@@ -300,7 +352,8 @@ function generateWooCommerceTestData() {
         
     } catch (error) {
         console.error('❌ Error generating WooCommerce test data:', error.message);
-        // Don't throw error as this is not critical
+        console.log('⚠️ Continuing with setup - test data generation is not critical');
+        // Don't throw error as this is not critical for the main setup
     }
 }
 

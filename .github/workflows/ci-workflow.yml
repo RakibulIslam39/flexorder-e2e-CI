@@ -71,7 +71,7 @@ jobs:
           
       - name: Start WordPress with Docker
         run: |
-          docker-compose -f docker-compose.fresh-wordpress.yml up -d
+          docker compose -f docker-compose.fresh-wordpress.yml up -d
           sleep 30
           
       - name: Wait for WordPress
@@ -85,7 +85,7 @@ jobs:
             counter=$((counter + 10))
             if [ $counter -ge $timeout ]; then
               echo "❌ WordPress failed to start within ${timeout} seconds"
-              docker-compose -f docker-compose.fresh-wordpress.yml logs
+              docker compose -f docker-compose.fresh-wordpress.yml logs
               exit 1
             fi
           done
@@ -163,7 +163,7 @@ jobs:
           
       - name: Start WordPress Environment
         run: |
-          docker-compose -f docker-compose.fresh-wordpress.yml up -d
+          docker compose -f docker-compose.fresh-wordpress.yml up -d
           sleep 30
           
       - name: Setup WordPress for Testing
@@ -288,5 +288,5 @@ jobs:
     steps:
       - name: Stop Docker containers
         run: |
-          docker-compose -f docker-compose.fresh-wordpress.yml down -v
+          docker compose -f docker-compose.fresh-wordpress.yml down -v
           docker system prune -f 

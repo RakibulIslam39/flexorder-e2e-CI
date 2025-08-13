@@ -271,20 +271,20 @@ function generateWooCommerceTestData() {
     try {
         // Create product categories
         console.log('Creating product categories...');
-        runWPCommand('wc product_cat create --name="Clothing" --description="Test clothing category"');
-        runWPCommand('wc product_cat create --name="Electronics" --description="Test electronics category"');
-        runWPCommand('wc product_cat create --name="Books" --description="Test books category"');
+        runWPCommand('wc product_cat create --name="Clothing" --description="Test clothing category" --user=1');
+        runWPCommand('wc product_cat create --name="Electronics" --description="Test electronics category" --user=1');
+        runWPCommand('wc product_cat create --name="Books" --description="Test books category" --user=1');
         
         // Create simple products
         console.log('Creating products...');
-        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --category_ids=1 --description="Comfortable cotton t-shirt" --short_description="Soft and breathable"');
-        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --category_ids=2 --description="High-quality wireless headphones" --short_description="Crystal clear sound"');
-        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --category_ids=3 --description="Complete programming guide" --short_description="Learn to code"');
+        runWPCommand('wc product create --name="Premium Cotton T-Shirt" --type=simple --regular_price=29.99 --sale_price=24.99 --category_ids=1 --description="Comfortable cotton t-shirt" --short_description="Soft and breathable" --user=1');
+        runWPCommand('wc product create --name="Wireless Bluetooth Headphones" --type=simple --regular_price=89.99 --sale_price=69.99 --category_ids=2 --description="High-quality wireless headphones" --short_description="Crystal clear sound" --user=1');
+        runWPCommand('wc product create --name="Programming Guide Book" --type=simple --regular_price=39.99 --category_ids=3 --description="Complete programming guide" --short_description="Learn to code" --user=1');
         
         // Create test customers
         console.log('Creating test customers...');
-        runWPCommand('wc customer create --email=customer1@test.com --first_name=John --last_name=Doe --billing_first_name=John --billing_last_name=Doe --billing_email=customer1@test.com --billing_phone=555-0101 --billing_address_1="123 Main St" --billing_city="New York" --billing_state="NY" --billing_postcode="10001" --billing_country="US"');
-        runWPCommand('wc customer create --email=customer2@test.com --first_name=Jane --last_name=Smith --billing_first_name=Jane --billing_last_name=Smith --billing_email=customer2@test.com --billing_phone=555-0102 --billing_address_1="456 Oak Ave" --billing_city="Los Angeles" --billing_state="CA" --billing_postcode="90210" --billing_country="US"');
+        runWPCommand('wc customer create --email=customer1@test.com --first_name=John --last_name=Doe --billing_first_name=John --billing_last_name=Doe --billing_email=customer1@test.com --billing_phone=555-0101 --billing_address_1="123 Main St" --billing_city="New York" --billing_state="NY" --billing_postcode="10001" --billing_country="US" --user=1');
+        runWPCommand('wc customer create --email=customer2@test.com --first_name=Jane --last_name=Smith --billing_first_name=Jane --billing_last_name=Smith --billing_email=customer2@test.com --billing_phone=555-0102 --billing_address_1="456 Oak Ave" --billing_city="Los Angeles" --billing_state="CA" --billing_postcode="90210" --billing_country="US" --user=1');
         
         // Create test orders
         console.log('Creating test orders...');
@@ -293,7 +293,7 @@ function generateWooCommerceTestData() {
             const status = statuses[i % statuses.length];
             const customerEmail = i % 2 === 0 ? 'customer1@test.com' : 'customer2@test.com';
             
-            runWPCommand(`wc order create --status="${status}" --customer_email="${customerEmail}" --line_items="[{\"product_id\":1,\"quantity\":1}]" --total="29.99"`);
+            runWPCommand(`wc order create --status="${status}" --customer_email="${customerEmail}" --line_items="[{\"product_id\":1,\"quantity\":1}]" --total="29.99" --user=1`);
         }
         
         console.log('✅ WooCommerce test data generated');
@@ -309,20 +309,9 @@ function generateApiKeys() {
     console.log('🔑 Generating WooCommerce API keys...');
     
     try {
-        // Create API key
-        const apiKeyData = runWPCommand('wc rest_api create_key --user=1 --description="FlexOrder Test API Key" --permissions=read_write --format=json');
-        
-        let consumerKey, consumerSecret;
-        
-        try {
-            const parsedData = JSON.parse(apiKeyData);
-            consumerKey = parsedData.consumer_key;
-            consumerSecret = parsedData.consumer_secret;
-        } catch (parseError) {
-            console.log('Failed to parse API key data, generating placeholder keys...');
-            consumerKey = 'ck_' + require('crypto').randomBytes(32).toString('hex');
-            consumerSecret = 'cs_' + require('crypto').randomBytes(32).toString('hex');
-        }
+        // Generate placeholder API keys since WooCommerce CLI doesn't support REST API key creation
+        const consumerKey = 'ck_' + require('crypto').randomBytes(32).toString('hex');
+        const consumerSecret = 'cs_' + require('crypto').randomBytes(32).toString('hex');
         
         // Store API keys in WordPress options
         runWPCommand(`option update flexorder_woocommerce_consumer_key "${consumerKey}"`);
@@ -346,6 +335,7 @@ function generateApiKeys() {
         console.log('✅ API keys generated and stored');
         console.log(`Consumer Key: ${consumerKey}`);
         console.log(`Consumer Secret: ${consumerSecret}`);
+        console.log('Note: These are placeholder keys. For real API access, create keys via WooCommerce admin panel.');
         
     } catch (error) {
         console.error('❌ Error generating API keys:', error.message);

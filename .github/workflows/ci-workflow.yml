@@ -55,19 +55,7 @@ jobs:
         
       - name: Setup MySQL
         run: |
-          docker run --name mysql-${{ github.run_id }} \
-            -e MYSQL_ROOT_PASSWORD=rootpassword \
-            -e MYSQL_DATABASE=flexorder_test \
-            -e MYSQL_USER=flexorder_user \
-            -e MYSQL_PASSWORD=flexorder_pass \
-            -p 3306:3306 \
-            -d mysql:${{ env.MYSQL_VERSION }}
-          
-          # Wait for MySQL to be ready
-          until docker exec mysql-${{ github.run_id }} mysqladmin ping -h localhost --silent; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
+          echo "MySQL will be started by docker-compose"
           
       - name: Start WordPress with Docker
         run: |
@@ -76,9 +64,26 @@ jobs:
           
       - name: Wait for WordPress
         run: |
-          echo "Waiting for WordPress to be ready..."
+          echo "Waiting for MySQL and WordPress to be ready..."
           timeout=300  # 5 minutes timeout
           counter=0
+          
+          # Wait for MySQL to be ready
+          echo "Waiting for MySQL..."
+          until docker exec flexorder-mysql mysqladmin ping -h localhost --silent; do
+            echo "Waiting for MySQL... (${counter}s)"
+            sleep 5
+            counter=$((counter + 5))
+            if [ $counter -ge $timeout ]; then
+              echo "❌ MySQL failed to start within ${timeout} seconds"
+              docker compose -f docker-compose.fresh-wordpress.yml logs
+              exit 1
+            fi
+          done
+          echo "✅ MySQL is ready!"
+          
+          # Wait for WordPress to be ready
+          echo "Waiting for WordPress..."
           while ! curl -f http://localhost:8080 >/dev/null 2>&1; do
             echo "Waiting for WordPress... (${counter}s)"
             sleep 10
@@ -147,24 +152,46 @@ jobs:
         
       - name: Setup MySQL
         run: |
-          docker run --name mysql-${{ github.run_id }}-${{ matrix.browser }} \
-            -e MYSQL_ROOT_PASSWORD=rootpassword \
-            -e MYSQL_DATABASE=flexorder_test_${{ matrix.browser }} \
-            -e MYSQL_USER=flexorder_user \
-            -e MYSQL_PASSWORD=flexorder_pass \
-            -p 3306:3306 \
-            -d mysql:${{ env.MYSQL_VERSION }}
-          
-          # Wait for MySQL to be ready
-          until docker exec mysql-${{ github.run_id }}-${{ matrix.browser }} mysqladmin ping -h localhost --silent; do
-            echo "Waiting for MySQL..."
-            sleep 2
-          done
+          echo "MySQL will be started by docker-compose"
           
       - name: Start WordPress Environment
         run: |
           docker compose -f docker-compose.fresh-wordpress.yml up -d
           sleep 30
+          
+      - name: Wait for WordPress Environment
+        run: |
+          echo "Waiting for MySQL and WordPress to be ready..."
+          timeout=300  # 5 minutes timeout
+          counter=0
+          
+          # Wait for MySQL to be ready
+          echo "Waiting for MySQL..."
+          until docker exec flexorder-mysql mysqladmin ping -h localhost --silent; do
+            echo "Waiting for MySQL... (${counter}s)"
+            sleep 5
+            counter=$((counter + 5))
+            if [ $counter -ge $timeout ]; then
+              echo "❌ MySQL failed to start within ${timeout} seconds"
+              docker compose -f docker-compose.fresh-wordpress.yml logs
+              exit 1
+            fi
+          done
+          echo "✅ MySQL is ready!"
+          
+          # Wait for WordPress to be ready
+          echo "Waiting for WordPress..."
+          while ! curl -f http://localhost:8080 >/dev/null 2>&1; do
+            echo "Waiting for WordPress... (${counter}s)"
+            sleep 10
+            counter=$((counter + 10))
+            if [ $counter -ge $timeout ]; then
+              echo "❌ WordPress failed to start within ${timeout} seconds"
+              docker compose -f docker-compose.fresh-wordpress.yml logs
+              exit 1
+            fi
+          done
+          echo "✅ WordPress is ready!"
           
       - name: Setup WordPress for Testing
         run: |

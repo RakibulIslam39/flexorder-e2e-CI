@@ -371,8 +371,8 @@ async function main() {
         // Setup WooCommerce
         setupWooCommerce();
         
-        // Install FlexOrder plugin
-        installFlexOrderPlugin();
+        // Install FlexOrder plugin (commented out - plugin code not in this repo)
+        // installFlexOrderPlugin();
         
         // Install theme
         installTheme();

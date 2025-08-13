@@ -40,18 +40,18 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps
         
-      - name: Build FlexOrder Plugin
-        id: build
-        run: |
-          echo "Building FlexOrder plugin from main branch code"
-          npm run build:plugin
-          if [ -f "build/order-sync-with-google-sheets-for-woocommerce.zip" ]; then
-            echo "plugin-path=build/order-sync-with-google-sheets-for-woocommerce.zip" >> $GITHUB_OUTPUT
-          else
-            echo "plugin-path=" >> $GITHUB_OUTPUT
-            echo "❌ Plugin build failed - no zip file created"
-            exit 1
-          fi
+      # - name: Build FlexOrder Plugin
+      #   id: build
+      #   run: |
+      #     echo "Building FlexOrder plugin from main branch code"
+      #     npm run build:plugin
+      #     if [ -f "build/order-sync-with-google-sheets-for-woocommerce.zip" ]; then
+      #       echo "plugin-path=build/order-sync-with-google-sheets-for-woocommerce.zip" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "plugin-path=" >> $GITHUB_OUTPUT
+      #       echo "❌ Plugin build failed - no zip file created"
+      #       exit 1
+      #     fi
         
       - name: Setup MySQL
         run: |

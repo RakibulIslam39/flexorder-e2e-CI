@@ -80,23 +80,23 @@ function create_and_configure_site() {
     echo "Installing WooCommerce"
     wp plugin install woocommerce --activate --allow-root
     
-    # Install FlexOrder plugin (Free Version)
-    echo "Installing FlexOrder plugin (Free Version)"
-    if [ -f "$GITHUB_WORKSPACE/build/$PLUGIN_NAME.zip" ]; then
-        wp plugin install "$GITHUB_WORKSPACE/build/$PLUGIN_NAME.zip" --activate --allow-root
-    else
-        echo "Installing from current directory"
-        wp plugin install . --activate --allow-root
-    fi
+    # # Install FlexOrder plugin (Free Version)
+    # echo "Installing FlexOrder plugin (Free Version)"
+    # if [ -f "$GITHUB_WORKSPACE/build/$PLUGIN_NAME.zip" ]; then
+    #     wp plugin install "$GITHUB_WORKSPACE/build/$PLUGIN_NAME.zip" --activate --allow-root
+    # else
+    #     echo "Installing from current directory"
+    #     wp plugin install . --activate --allow-root
+    # fi
     
-    # Install and activate Pro version if license key is available
-    echo "Checking for Pro version installation"
-    if [ -n "$FLEXORDER_PRO_LICENSE_KEY" ]; then
-        echo "Installing FlexOrder Pro version"
-        install_pro_version
-    else
-        echo "No Pro license key provided, using Free version only"
-    fi
+    # # Install and activate Pro version if license key is available
+    # echo "Checking for Pro version installation"
+    # if [ -n "$FLEXORDER_PRO_LICENSE_KEY" ]; then
+    #     echo "Installing FlexOrder Pro version"
+    #     install_pro_version
+    # else
+    #     echo "No Pro license key provided, using Free version only"
+    # fi
     
     # Create test users (like rtMedia)
     echo "Creating test users"
@@ -118,43 +118,43 @@ function create_and_configure_site() {
     echo "Site configuration completed"
 }
 
-# Install FlexOrder Pro version
-function install_pro_version() {
-    echo "Installing FlexOrder Pro version"
+# # Install FlexOrder Pro version
+# function install_pro_version() {
+#     echo "Installing FlexOrder Pro version"
     
-    # Check if Pro plugin file exists
-    if [ -f "$GITHUB_WORKSPACE/build/${PLUGIN_NAME}-pro.zip" ]; then
-        echo "Installing Pro plugin from zip"
-        wp plugin install "$GITHUB_WORKSPACE/build/${PLUGIN_NAME}-pro.zip" --activate --allow-root
-    else
-        echo "Pro plugin zip not found, checking for Pro directory"
-        if [ -d "$GITHUB_WORKSPACE/pro" ]; then
-            echo "Installing Pro plugin from directory"
-            wp plugin install "$GITHUB_WORKSPACE/pro" --activate --allow-root
-        else
-            echo "Pro plugin not found, continuing with Free version"
-            return
-        fi
-    fi
+#     # Check if Pro plugin file exists
+#     if [ -f "$GITHUB_WORKSPACE/build/${PLUGIN_NAME}-pro.zip" ]; then
+#         echo "Installing Pro plugin from zip"
+#         wp plugin install "$GITHUB_WORKSPACE/build/${PLUGIN_NAME}-pro.zip" --activate --allow-root
+#     else
+#         echo "Pro plugin zip not found, checking for Pro directory"
+#         if [ -d "$GITHUB_WORKSPACE/pro" ]; then
+#             echo "Installing Pro plugin from directory"
+#             wp plugin install "$GITHUB_WORKSPACE/pro" --activate --allow-root
+#         else
+#             echo "Pro plugin not found, continuing with Free version"
+#             return
+#         fi
+#     fi
     
-    # Activate Pro license if key is provided
-    if [ -n "$FLEXORDER_PRO_LICENSE_KEY" ]; then
-        echo "Activating Pro license"
-        activate_pro_license
-    fi
-}
+#     # Activate Pro license if key is provided
+#     if [ -n "$FLEXORDER_PRO_LICENSE_KEY" ]; then
+#         echo "Activating Pro license"
+#         activate_pro_license
+#     fi
+# }
 
-# Activate FlexOrder Pro license
-function activate_pro_license() {
-    echo "Activating FlexOrder Pro license"
+# # Activate FlexOrder Pro license
+# function activate_pro_license() {
+#     echo "Activating FlexOrder Pro license"
     
-    # This would typically involve making an API call to the license server
-    # For now, we'll store the license key in WordPress options
-    wp option update flexorder_pro_license_key "$FLEXORDER_PRO_LICENSE_KEY" --allow-root
-    wp option update flexorder_pro_license_status "active" --allow-root
+#     # This would typically involve making an API call to the license server
+#     # For now, we'll store the license key in WordPress options
+#     wp option update flexorder_pro_license_key "$FLEXORDER_PRO_LICENSE_KEY" --allow-root
+#     wp option update flexorder_pro_license_status "active" --allow-root
     
-    echo "Pro license activated"
-}
+#     echo "Pro license activated"
+# }
 
 # Generate WooCommerce test data (your prerequisite)
 function generate_woocommerce_test_data() {

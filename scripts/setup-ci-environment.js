@@ -177,7 +177,23 @@ function setupWooCommerce() {
             console.log(`WooCommerce version: ${wcVersion}`);
         } catch (error) {
             console.log('Installing WooCommerce...');
-            runWPCommand('plugin install woocommerce --activate');
+            
+            // Try to install WooCommerce with force flag to bypass version checks
+            try {
+                runWPCommand('plugin install woocommerce --activate --force');
+            } catch (installError) {
+                console.log('Standard installation failed, trying alternative approach...');
+                
+                // Try installing a specific version that's compatible
+                try {
+                    runWPCommand('plugin install woocommerce --version=8.5.0 --activate');
+                } catch (versionError) {
+                    console.log('Version-specific installation failed, trying latest compatible version...');
+                    
+                    // Try installing from WordPress.org with force
+                    runWPCommand('plugin install https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip --activate --force');
+                }
+            }
         }
         
         // Configure WooCommerce basic settings

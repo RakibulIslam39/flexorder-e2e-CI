@@ -1,6 +1,10 @@
 name: FlexOrder CI/CD Pipeline
 
 on:
+  push:
+    branches: [main, dev, qa]
+  # pull_request:
+  #   branches: [main, dev, qa]
   workflow_call:
     inputs:
       free_ref:

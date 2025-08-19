@@ -5,6 +5,16 @@ on:
     branches: [main, dev, qa]
   # pull_request:
   #   branches: [main, dev, qa]
+  workflow_call:
+    inputs:
+      free_ref:
+        required: false
+        type: string
+        default: main
+      pro_ref:
+        required: false
+        type: string
+        default: main
 
 env:
   NODE_VERSION: '18'
@@ -232,79 +242,73 @@ jobs:
             test-results/**/*.png
             *.png
 
-  # Build and Deploy (commented out - plugin code not in this repo)
-  # build-deploy:
-  #   name: Build and Deploy
-  #   runs-on: ubuntu-latest
-  #   needs: [e2e-tests]
-  #   if: github.ref == 'refs/heads/main' && success()
-  #   
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #         cache: 'npm'
-  #         
-  #     - name: Install dependencies
-  #       run: npm ci
-  #         
-  #     - name: Build Plugin
-  #       run: |
-  #         echo "Building FlexOrder plugin for release"
-  #         timeout 600 npm run build:plugin
-  #         
-  #         # Create Pro version if license key is available
-  #         if [ -n "${{ secrets.FLEXORDER_PRO_LICENSE_KEY }}" ]; then
-  #           echo "Building Pro version"
-  #           timeout 600 npm run build:pro
-  #         fi
-  #       timeout-minutes: 15
-  #         
-  #     - name: Create Release
-  #       id: create_release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         tag_name: v${{ github.run_number }}
-  #         release_name: Release v${{ github.run_number }}
-  #         body: |
-  #           Automated release from CI/CD pipeline
-  #           
-  #           ## Changes
-  #           - E2E tests passed across all browsers
-  #           
-  #           ## Artifacts
-  #           - Plugin build included
-  #           - Pro version included (if license available)
-  #         draft: false
-  #         prerelease: false
-  #           
-  #     - name: Upload Plugin Build
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #         asset_path: ./build/order-sync-with-google-sheets-for-woocommerce.zip
-  #         asset_name: order-sync-with-google-sheets-for-woocommerce.zip
-  #         asset_content_type: application/zip
-  #           
-  #     - name: Upload Pro Plugin Build
-  #       uses: actions/upload-release-asset@v1
-  #       continue-on-error: true
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #         asset_path: ./build/order-sync-with-google-sheets-for-woocommerce-pro.zip
-  #         asset_name: order-sync-with-google-sheets-for-woocommerce-pro.zip
-  #         asset_content_type: application/zip
+  build-deploy:
+    name: Build and Deploy Plugins
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CI Workflow Repo
+        uses: actions/checkout@v4
 
+      - name: Checkout Free Plugin (flexorder)
+        uses: actions/checkout@v4
+        with:
+          repository: WPPOOL/flexorder
+          ref: ${{ inputs.free_ref }}
+          path: flexorder
+
+      - name: Checkout Pro Plugin (flexorder-ultimate)
+        uses: actions/checkout@v4
+        with:
+          repository: WPPOOL/flexorder-ultimate
+          ref: ${{ inputs.pro_ref }}
+          path: flexorder-ultimate
+
+      - name: Zip Free Plugin
+        run: |
+          cd flexorder
+          zip -r ../flexorder.zip .
+          cd ..
+
+      - name: Zip Pro Plugin
+        run: |
+          cd flexorder-ultimate
+          zip -r ../flexorder-ultimate.zip .
+          cd ..
+
+      # Example: Install plugins on WordPress (assuming WP-CLI is available)
+      - name: Install Free Plugin
+        run: wp plugin install flexorder.zip --activate --allow-root
+
+      - name: Install Pro Plugin
+        run: wp plugin install flexorder-ultimate.zip --activate --allow-root
+
+      # # Run Playwright Tests
+      # - name: Run Playwright Tests
+      #   id: playwright
+      #   run: |
+      #     npx playwright test --reporter=html --output=playwright-report
+      #   continue-on-error: true
+
+      # # Send Report via Email ( if fail)
+      # - name: Send Report via Email
+      #   uses: dawidd6/action-send-mail@v3
+      #   with: 
+      #     server_address: smtp.gmail.com
+      #     server_port: 587
+      #     username: ${{ secrets.USERNAME }}
+      #     password: ${{ secrets.PASSWORD }}
+      #     from: no-replay@gmail.com  # Use the sender email from GitHub Secrets
+      #     to: ${{ secrets.SLACK_EMAIL }}  # The recipient email address
+      #     subject: "Automation Test Report - Playwright"
+      #     body: |
+      #       Hi Team,
+
+      #       The automation tests for the production site have completed. 
+      #       Please check the attached report for details.
+            
+      #       $(cat playwright-report/index.html)
+      #     attachments: |
+      #            ${{ github.workspace }}/playwright-report/index.html
   # Cleanup
   cleanup:
     name: Cleanup

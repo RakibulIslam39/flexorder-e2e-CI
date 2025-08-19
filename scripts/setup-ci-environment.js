@@ -516,8 +516,21 @@ async function main() {
         // Setup WooCommerce
         setupWooCommerce();
         
-        // Install FlexOrder plugin (commented out - plugin code not in this repo)
-        // installFlexOrderPlugin();
+        // After WooCommerce setup, before theme install
+        // Install Free Plugin from zip if present
+        if (fs.existsSync('flexorder.zip')) {
+          console.log('Installing Free Plugin from flexorder.zip...');
+          runWPCommand('plugin install flexorder.zip --activate');
+        } else {
+          console.warn('flexorder.zip not found! Skipping free plugin install.');
+        }
+        // Install Pro Plugin from zip if present
+        if (fs.existsSync('flexorder-ultimate.zip')) {
+          console.log('Installing Pro Plugin from flexorder-ultimate.zip...');
+          runWPCommand('plugin install flexorder-ultimate.zip --activate');
+        } else {
+          console.warn('flexorder-ultimate.zip not found! Skipping pro plugin install.');
+        }
         
         // Install theme
         installTheme();

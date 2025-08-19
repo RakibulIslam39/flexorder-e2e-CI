@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// NOTE: This script is for local plugin packaging. In the multi-repo CI workflow, plugin zips are created directly in the workflow and this script is not used.
 
 /**
  * Plugin Build Script

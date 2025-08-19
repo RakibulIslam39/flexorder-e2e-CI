@@ -79,6 +79,10 @@ jobs:
             fi
           done
           echo "✅ WordPress is ready!"
+          
+      # --- Generate Test Data ---
+      - name: Generate Test Data
+        run: node scripts/setup-ci-environment.js --generate-test-data
 
       # --- Build and Deploy Plugins ---
       - name: Checkout Free Plugin (flexorder)
@@ -112,10 +116,6 @@ jobs:
 
       - name: Install Pro Plugin
         run: wp plugin install flexorder-ultimate.zip --activate --allow-root
-
-      # --- Generate Test Data ---
-      - name: Generate Test Data
-        run: node scripts/setup-ci-environment.js --generate-test-data
 
       # --- Run E2E Tests ---
       - name: Run E2E Tests

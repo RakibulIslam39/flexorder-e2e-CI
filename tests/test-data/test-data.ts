@@ -148,8 +148,7 @@ export class TestDataGenerator {
     ];
   }
 
-  static getRandomTestProduct(): string {
-    const products = this.getTestProducts();
+  static getRandomTestProduct(products: string[] = this.getTestProducts()): string {
     return products[Math.floor(Math.random() * products.length)] || 'Football Net';
   }
-} 
+}

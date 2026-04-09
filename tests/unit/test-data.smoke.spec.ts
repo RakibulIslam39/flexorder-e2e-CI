@@ -24,11 +24,6 @@ test.describe('TestDataGenerator', () => {
   });
 
   test('falls back to default product when list is empty', () => {
-    const customGenerator = {
-      getTestProducts: () => [],
-    };
-
-    const product = TestDataGenerator.getRandomTestProduct.call(customGenerator as any);
-    expect(product).toBe('Football Net');
+    expect(TestDataGenerator.getRandomTestProduct([])).toBe('Football Net');
   });
 });

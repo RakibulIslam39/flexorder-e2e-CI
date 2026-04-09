@@ -98,7 +98,7 @@ function getTestArgs(options) {
   }
   
   // Headless mode
-  if (options.headless !== undefined) {
+  if (options.headed) {
     args.push('--headed');
   }
   
@@ -309,4 +309,20 @@ async function main() {
   }
 }
 
-main(); 
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  config,
+  runCommand,
+  createEnvironmentFile,
+  getTestArgs,
+  runSmokeTests,
+  runRegressionTests,
+  runAllTests,
+  runCrossBrowserTests,
+  runParallelTests,
+  showHelp,
+  main
+};

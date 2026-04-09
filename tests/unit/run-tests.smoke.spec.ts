@@ -29,7 +29,6 @@ test.describe('scripts/run-tests helpers', () => {
   test('does not add headed flag by default', () => {
     const args = runTests.getTestArgs({});
     expect(args).toEqual([]);
-    expect(args).not.toContain('--headed');
   });
 
   test('creates CI environment file with CI defaults', () => {
